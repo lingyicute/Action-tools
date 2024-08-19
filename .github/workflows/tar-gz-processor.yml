@@ -1,0 +1,44 @@
+name: Tar.gz Processor
+
+on:
+  workflow_dispatch:
+    inputs:
+      LINK:
+        description: 'The file link'
+        required: true
+      
+jobs:
+  process:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up dependencies
+      run: sudo apt-get install wget tree tar gzip
+    
+    - name: Tree at first
+      run: tree -ash \${{ github.workspace }}
+        
+    - name: Wget
+      run: wget -nv '${{ github.event.inputs.LINK }}'
+      
+    - name: Tree after wget
+      run: tree -ash \${{ github.workspace }}
+      
+    - name: Unzip
+      run: tar -zxvf *.tar.gz
+      
+    - name: Tree after unzip
+      run: tree -ash \${{ github.workspace }}
+
+    - name: Process commands
+      run: |
+        whoami
+    
+    - name: Tree after process
+      run: tree -ash \${{ github.workspace }}
+      
+    - name: Upload Aritfact (universal)
+      uses: actions/upload-artifact@v4
+      with:
+        name: Artifacts file zip
+        path: ${{ github.workspace }}/*
