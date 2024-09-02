@@ -33,6 +33,7 @@ jobs:
     - name: Process commands
       run: |
         whoami
+        rm  *.tar.gz
     
     - name: Tree after process
       run: tree -ash \${{ github.workspace }}
