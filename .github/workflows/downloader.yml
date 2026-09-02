@@ -52,7 +52,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
           cd downloads
-          gh release create "${{ github.run_number }}" * \
+          gh release create "downloader-${{ github.run_number }}" * \
             --title "Downloader 下载成功: 第 ${{ github.run_number }} 个文件" \
             --notes-file - << 'EOF'
           Downloader 下载的文件：${{ github.event.inputs.LINK }}
