@@ -1,0 +1,63 @@
+name: Tar.gz to Zip
+
+on:
+  workflow_dispatch:
+    inputs:
+      LINK:
+        description: 'The file link (.tar.gz)'
+        required: true
+      
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Create working directory
+      run: mkdir a
+      
+    - name: Set up dependencies
+      run: sudo apt-get update && sudo apt-get install -y wget tree tar gzip zip
+      
+    - name: Download file
+      run: wget -O a/a.tar.gz '${{ github.event.inputs.LINK }}'
+      
+    - name: Tree after download
+      run: tree -ash "${{ github.workspace }}/a"
+      
+    - name: Extract archive
+      run: cd a && tar -zxvf a.tar.gz
+      
+    - name: Tree after extraction
+      run: tree -ash "${{ github.workspace }}/a"
+      
+    - name: Process files (Remove symlinks)
+      run: |
+        # 1. 删除原始压缩包
+        rm -f a/a.tar.gz
+        
+        # 2. 查找并删除所有符号链接 (symlinks)
+        find a/ -type l -delete
+
+    - name: Tree after removing symlinks
+      run: tree -ash "${{ github.workspace }}/a"
+        
+    - name: Repack to ZIP
+      run: |
+        cd a
+        # 将 a 目录下的所有文件静默(-q)递归(-r)打包到上一层目录的 repacked.zip 中
+        zip -q -r ../repacked.zip .
+
+    - name: Create Release and Upload Assets
+      env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+          gh release create "${{ github.run_number }}" repacked.zip \
+            --title "Tar.gz to Zip 成功: 第 ${{ github.run_number }} 次运行" \
+            --notes-file - << 'EOF'
+          **源文件:** ${{ github.event.inputs.LINK }}
+          EOF
