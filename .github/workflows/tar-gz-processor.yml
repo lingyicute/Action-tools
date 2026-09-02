@@ -14,10 +14,12 @@ jobs:
       contents: write
       
     steps:
-    - name: Set up dependencies
-      run: mkdir a && sudo apt-get install wget tree tar gzip
     - name: Checkout code
       uses: actions/checkout@v4
+    - name: mkdir
+      run: mkdir a
+    - name: Set up dependencies
+      run: sudo apt-get install wget tree tar gzip
     - name: Wget
       run: wget -O a/a.tar.gz '${{ github.event.inputs.LINK }}'
     - name: Tree after wget
