@@ -9,7 +9,7 @@ jobs:
 
     steps:
     - name: Set up dependencies
-      run: sudo apt-get install neofetch tree df
+      run: sudo apt-get install neofetch tree
 
     - name: lscpu
       run: sudo lscpu
