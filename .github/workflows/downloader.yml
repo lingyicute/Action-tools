@@ -18,25 +18,51 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Set up dependencies
-      run: sudo apt-get install wget tree
+      run: sudo apt-get install wget tree coreutils -y
+      
+    - name: Create download directory
+      run: mkdir -p downloads
       
     - name: Wget
-      run: wget -O down '${{ github.event.inputs.LINK }}'
+      # 将文件下载到 downloads 文件夹内
+      run: wget -O downloads/down '${{ github.event.inputs.LINK }}'
       
+    - name: Check size and split if >= 2GiB
+      run: |
+        cd downloads
+        # 获取文件大小 (字节)
+        FILE_SIZE=$(stat -c%s "down")
+        # 2GiB 对应的字节数
+        LIMIT=$((2 * 1024 * 1024 * 1024))
+        
+        if [ "$FILE_SIZE" -ge "$LIMIT" ]; then
+          echo "文件大小为 $FILE_SIZE 字节，大于等于 2GiB，开始分割..."
+          split -b 2046M -d down down.part
+          rm down 
+          echo "分割完成！"
+        else
+          echo "文件大小为 $FILE_SIZE 字节，小于 2GiB，无需分割。"
+        fi
+
     - name: Tree
-      run: tree -ash \${{ github.workspace }}
+      run: tree -ash ${{ github.workspace }}/downloads
       
     - name: Create Release and Upload Assets
       env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-          gh release create "${{ github.run_number }}" down \
+          cd downloads
+          gh release create "${{ github.run_number }}" * \
             --title "Downloader 下载成功: 第 ${{ github.run_number }} 个文件" \
             --notes-file - << 'EOF'
           Downloader 下载的文件：${{ github.event.inputs.LINK }}
+          > [!Tip]
+          > 
+          > 如果文件被分割，请下载所有 `.part` 文件后在本地使用 `cat down.part* > down` (Linux/macOS) 或 `copy /b down.part* down` (Windows) 进行合并。
           EOF
-    - name: Upload Aritfact (universal)
+
+    - name: Upload Artifact (universal)
       uses: actions/upload-artifact@v4
       with:
         name: Downloaded-File
-        path: ${{ github.workspace }}/down
+        path: ${{ github.workspace }}/downloads/*
