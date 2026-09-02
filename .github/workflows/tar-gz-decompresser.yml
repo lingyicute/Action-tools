@@ -50,7 +50,7 @@ jobs:
       run: |
           shopt -s dotglob
           
-          gh release create "${{ github.run_number }}" a/* \
+          gh release create "targz-d-${{ github.run_number }}" a/* \
             --title "Tar.gz decompresser 解压成功: 第 ${{ github.run_number }} 个文件" \
             --notes-file - << 'EOF'
           Tar.gz decompresser 解压的文件：${{ github.event.inputs.LINK }}
