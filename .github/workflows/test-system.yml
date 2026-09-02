@@ -1,0 +1,39 @@
+name: System Test
+
+on:
+  workflow_dispatch:
+      
+jobs:
+  process:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up dependencies
+      run: sudo apt-get install neofetch tree df
+
+    - name: lscpu
+      run: sudo lscpu
+      
+    - name: tree
+      run: sudo tree -ash -L 2 /home
+
+    - name: tree (more)
+      run: sudo tree -ash -L 2 /home
+      
+    - name: whoami
+      run: whoami
+      
+    - name: id
+      run: id
+
+    - name: uname
+      run: uname -a
+
+    - name: free
+      run: free -h
+
+    - name: df
+      run: sudo df -h
+      
+    - name: neofetch
+      run: sudo neofetch
