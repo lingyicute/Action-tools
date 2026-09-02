@@ -13,33 +13,30 @@ jobs:
 
     steps:
     - name: Set up dependencies
-      run: sudo apt-get install wget tree tar gzip
-    
-    - name: Tree at first
-      run: tree -ash \${{ github.workspace }}
-        
+      run: mkdir a && sudo apt-get install wget tree tar gzip
+    - name: Checkout code
+      uses: actions/checkout@v4
     - name: Wget
-      run: wget -nv '${{ github.event.inputs.LINK }}'
-      
+      run: wget -O a/a.tar.gz '${{ github.event.inputs.LINK }}'
     - name: Tree after wget
       run: tree -ash \${{ github.workspace }}
-      
     - name: Unzip
-      run: tar -zxvf *.tar.gz
-      
+      run: cd a && tar -zxvf a.tar.gz
     - name: Tree after unzip
       run: tree -ash \${{ github.workspace }}
-
     - name: Process commands
+      run: rm a/a.tar.gz
+    - name: Create Release and Upload Assets
+      env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        whoami
-        rm  *.tar.gz
-    
-    - name: Tree after process
-      run: tree -ash \${{ github.workspace }}
-      
+          gh release create "${{ github.run_number }}" a/* \
+            --title "Tar.gz Processor 解压成功: 第 ${{ github.run_number }} 个文件" \
+            --notes-file - << 'EOF'
+          Tar.gz Processor 解压的文件：${{ github.event.inputs.LINK }}
+          EOF
     - name: Upload Aritfact (universal)
       uses: actions/upload-artifact@v4
       with:
         name: Artifacts file zip
-        path: ${{ github.workspace }}/*
+        path: ${{ github.workspace }}/a/*
