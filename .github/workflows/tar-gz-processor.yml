@@ -10,7 +10,9 @@ on:
 jobs:
   process:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+      
     steps:
     - name: Set up dependencies
       run: mkdir a && sudo apt-get install wget tree tar gzip
