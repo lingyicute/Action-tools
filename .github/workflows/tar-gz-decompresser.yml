@@ -1,4 +1,4 @@
-name: Tar.gz Processor
+name: Tar.gz decompresser
 
 on:
   workflow_dispatch:
@@ -16,31 +16,42 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      
     - name: mkdir
       run: mkdir a
+      
     - name: Set up dependencies
       run: sudo apt-get install wget tree tar gzip
+      
     - name: Wget
       run: wget -O a/a.tar.gz '${{ github.event.inputs.LINK }}'
+      
     - name: Tree after wget
-      run: tree -ash \${{ github.workspace }}
+      run: tree -ash "${{ github.workspace }}"
+      
     - name: Unzip
       run: cd a && tar -zxvf a.tar.gz
+      
     - name: Tree after unzip
-      run: tree -ash \${{ github.workspace }}
-    - name: Process commands
-      run: rm a/a.tar.gz
+      run: tree -ash "${{ github.workspace }}"
+      
+    - name: Process commands (Flatten directories)
+      run: |
+        rm -f a/a.tar.gz
+        find a/ -mindepth 2 -type f -exec mv {} a/ \;
+        find a/ -mindepth 1 -type d -exec rm -rf {} +
+
+    - name: Tree after process
+      run: tree -ash "${{ github.workspace }}"
+        
     - name: Create Release and Upload Assets
       env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+          shopt -s dotglob
+          
           gh release create "${{ github.run_number }}" a/* \
-            --title "Tar.gz Processor 解压成功: 第 ${{ github.run_number }} 个文件" \
+            --title "Tar.gz decompresser 解压成功: 第 ${{ github.run_number }} 个文件" \
             --notes-file - << 'EOF'
-          Tar.gz Processor 解压的文件：${{ github.event.inputs.LINK }}
+          Tar.gz decompresser 解压的文件：${{ github.event.inputs.LINK }}
           EOF
-    - name: Upload Aritfact (universal)
-      uses: actions/upload-artifact@v4
-      with:
-        name: Artifacts file zip
-        path: ${{ github.workspace }}/a/*
