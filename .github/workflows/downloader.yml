@@ -6,29 +6,34 @@ on:
       LINK:
         description: 'The file link'
         required: true
-      FILE:
-        description: 'The file name'
-        required: true
       
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Set up dependencies
       run: sudo apt-get install wget tree
       
     - name: Run
-      run: wget -nv '${{ github.event.inputs.LINK }}'
+      run: wget -nv -O down '${{ github.event.inputs.LINK }}'
       
     - name: Tree
       run: tree -ash \${{ github.workspace }}
-
-    - name: Rename
-      run: mv ./* down
       
+    - name: Create Release and Upload Assets
+      env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+          gh release create "${{ github.run_number }}" down \
+            --title "Downloader 下载成功: 第 ${{ github.run_number }} 个文件" \
+            --notes-file - << 'EOF'
+          Downloader 下载的文件：${{ github.event.inputs.LINK }}
+          EOF
     - name: Upload Aritfact (universal)
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.inputs.FILE }}
+        name: Downloaded-File
         path: ${{ github.workspace }}/down
