@@ -21,7 +21,7 @@ jobs:
       run: sudo apt-get install wget tree
       
     - name: Wget
-      run: wget -nv -O down '${{ github.event.inputs.LINK }}'
+      run: wget -O down '${{ github.event.inputs.LINK }}'
       
     - name: Tree
       run: tree -ash \${{ github.workspace }}
