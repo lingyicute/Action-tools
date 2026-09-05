@@ -9,7 +9,7 @@
 
 A collection of handy tools powered by GitHub Actions — download files from a link, dump partitions from Android OTA `payload.bin`, extract or convert `.tar.gz` archives, and inspect the runner environment. Everything runs in your browser; nothing to install locally.
 
-**[中文文档](./README-ZH.md)** · English
+**[中文](./README-ZH.md)** · [English]
 
 ## Highlights
 
