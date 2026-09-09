@@ -268,10 +268,12 @@ section{padding:72px 0}
 .bigstat{font-size:3rem;font-weight:500;letter-spacing:-.03em;line-height:1;margin-bottom:6px}
 
 /* 使用步骤 */
-.usage-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
-@media (max-width:900px){.usage-grid{grid-template-columns:1fr}}
+.usage-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;align-items:start}
+.usage-grid > *{min-width:0}
+@media (max-width:900px){.usage-grid{grid-template-columns:minmax(0,1fr)}}
 .timeline{display:grid;gap:0}
-.tl{display:grid;grid-template-columns:48px 1fr;gap:16px;position:relative;padding-bottom:28px}
+.tl{display:grid;grid-template-columns:48px minmax(0,1fr);gap:16px;position:relative;padding-bottom:28px}
+.tl > *{min-width:0}
 .tl:not(:last-child)::before{content:"";position:absolute;left:23px;top:48px;bottom:0;width:2px;background:var(--outline-variant)}
 .tl .dot{width:48px;height:48px;border-radius:50%;background:var(--secondary-container);color:var(--on-secondary-container);display:grid;place-items:center;font-weight:600}
 .tl h3{font-size:1.1rem;margin:10px 0 6px}
@@ -279,7 +281,7 @@ section{padding:72px 0}
 .codeblock{background:var(--inverse-surface);color:var(--inverse-on-surface);border-radius:var(--r-lg);overflow:hidden;font-size:.85rem}
 .codeblock .head{display:flex;align-items:center;gap:6px;padding:10px 12px 10px 16px;border-bottom:1px solid color-mix(in oklch, var(--inverse-on-surface) 15%, transparent)}
 .codeblock .head span{margin-right:auto;font-size:.78rem;opacity:.7}
-.codeblock pre{padding:16px 18px;overflow-x:auto;line-height:1.7;margin:0}
+.codeblock pre{padding:16px 18px;overflow-x:auto;line-height:1.7;margin:0;max-width:100%}
 .codeblock .c{opacity:.55}
 .codeblock .k{color:var(--inverse-primary)}
 .copy{height:32px;padding:0 12px;border-radius:var(--r-full);display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:var(--inverse-on-surface);background:color-mix(in oklch, var(--inverse-on-surface) 10%, transparent)}
@@ -334,9 +336,8 @@ footer a{color:var(--primary);font-weight:500}
 .sw:hover{transform:scale(1.12)}
 .sw.on{border-color:var(--on-surface)}
 
-/* Snackbar */
-.snackbar{position:fixed;left:50%;bottom:24px;transform:translate(-50%,120%);background:var(--inverse-surface);color:var(--inverse-on-surface);padding:14px 20px;border-radius:var(--r-xs);box-shadow:var(--shadow-3);font-size:.9rem;z-index:70;transition:transform .35s var(--ease-emph);display:flex;gap:12px;align-items:center}
-.snackbar.show{transform:translate(-50%,0)}
+.snackbar{position:fixed;left:50%;bottom:24px;transform:translate(-50%,calc(100% + 40px));visibility:hidden;background:var(--inverse-surface);color:var(--inverse-on-surface);padding:14px 20px;border-radius:var(--r-xs);box-shadow:var(--shadow-3);font-size:.9rem;z-index:70;transition:transform .35s var(--ease-emph),visibility 0s linear .35s;display:flex;gap:12px;align-items:center}
+.snackbar.show{transform:translate(-50%,0);visibility:visible;transition:transform .35s var(--ease-emph),visibility 0s linear 0s}
 .snackbar svg{width:18px;height:18px;color:var(--inverse-primary)}
 
 /* Reveal */
