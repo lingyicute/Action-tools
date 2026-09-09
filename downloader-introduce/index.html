@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>Action Downloader · 让 GitHub 替你下载，用 Release CDN 送达</title>
+<meta name="description" content="Action Downloader：一个 GitHub Actions workflow。把海外下载链接交给 GitHub 的服务器下载，再通过 GitHub Release 的 CDN 高速送到中国大陆。">
+<style>
+/* ============ Material You 动态色调系统（OKLCH 色调色板） ============ */
+:root{
+  --hue: 265;
+  --hue-t: calc(var(--hue) + 60);
+  --hue-e: 30;
+
+  --primary: oklch(46% 0.15 var(--hue));
+  --on-primary: oklch(99% 0.01 var(--hue));
+  --primary-container: oklch(90% 0.07 var(--hue));
+  --on-primary-container: oklch(24% 0.11 var(--hue));
+  --secondary: oklch(48% 0.06 var(--hue));
+  --on-secondary: #fff;
+  --secondary-container: oklch(91% 0.04 var(--hue));
+  --on-secondary-container: oklch(26% 0.05 var(--hue));
+  --tertiary: oklch(47% 0.11 var(--hue-t));
+  --tertiary-container: oklch(90% 0.07 var(--hue-t));
+  --on-tertiary-container: oklch(25% 0.09 var(--hue-t));
+  --error: oklch(50% 0.19 var(--hue-e));
+  --error-container: oklch(92% 0.05 var(--hue-e));
+  --on-error-container: oklch(28% 0.12 var(--hue-e));
+
+  --surface: oklch(98.5% 0.008 var(--hue));
+  --surface-dim: oklch(90% 0.015 var(--hue));
+  --surface-bright: oklch(99% 0.006 var(--hue));
+  --surface-container-lowest: #fff;
+  --surface-container-low: oklch(97% 0.01 var(--hue));
+  --surface-container: oklch(95% 0.012 var(--hue));
+  --surface-container-high: oklch(93% 0.015 var(--hue));
+  --surface-container-highest: oklch(91% 0.018 var(--hue));
+  --on-surface: oklch(21% 0.02 var(--hue));
+  --on-surface-variant: oklch(42% 0.03 var(--hue));
+  --outline: oklch(58% 0.03 var(--hue));
+  --outline-variant: oklch(84% 0.02 var(--hue));
+  --inverse-surface: oklch(26% 0.02 var(--hue));
+  --inverse-on-surface: oklch(95% 0.01 var(--hue));
+  --inverse-primary: oklch(82% 0.1 var(--hue));
+  --scrim: rgba(0,0,0,.32);
+
+  --shadow-1: 0 1px 2px rgba(0,0,0,.14), 0 1px 3px 1px rgba(0,0,0,.06);
+  --shadow-2: 0 1px 2px rgba(0,0,0,.14), 0 2px 6px 2px rgba(0,0,0,.07);
+  --shadow-3: 0 4px 8px 3px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.14);
+
+  --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 28px; --r-full: 999px;
+  --ease-emph: cubic-bezier(.2,0,0,1);
+  --ease-std: cubic-bezier(.2,0,0,1);
+  --font: "Nebulove", "Google Sans", "Product Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --mono: "JetBrains Mono", "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+:root[data-theme="dark"]{
+  --primary: oklch(83% 0.1 var(--hue));
+  --on-primary: oklch(27% 0.11 var(--hue));
+  --primary-container: oklch(38% 0.13 var(--hue));
+  --on-primary-container: oklch(92% 0.05 var(--hue));
+  --secondary: oklch(82% 0.05 var(--hue));
+  --on-secondary: oklch(28% 0.05 var(--hue));
+  --secondary-container: oklch(36% 0.05 var(--hue));
+  --on-secondary-container: oklch(91% 0.03 var(--hue));
+  --tertiary: oklch(83% 0.08 var(--hue-t));
+  --tertiary-container: oklch(38% 0.1 var(--hue-t));
+  --on-tertiary-container: oklch(92% 0.05 var(--hue-t));
+  --error: oklch(80% 0.11 var(--hue-e));
+  --error-container: oklch(36% 0.13 var(--hue-e));
+  --on-error-container: oklch(92% 0.04 var(--hue-e));
+
+  --surface: oklch(16% 0.015 var(--hue));
+  --surface-dim: oklch(16% 0.015 var(--hue));
+  --surface-bright: oklch(30% 0.02 var(--hue));
+  --surface-container-lowest: oklch(12% 0.012 var(--hue));
+  --surface-container-low: oklch(19% 0.016 var(--hue));
+  --surface-container: oklch(22% 0.018 var(--hue));
+  --surface-container-high: oklch(25% 0.02 var(--hue));
+  --surface-container-highest: oklch(29% 0.022 var(--hue));
+  --on-surface: oklch(93% 0.01 var(--hue));
+  --on-surface-variant: oklch(80% 0.025 var(--hue));
+  --outline: oklch(60% 0.03 var(--hue));
+  --outline-variant: oklch(36% 0.03 var(--hue));
+  --inverse-surface: oklch(93% 0.01 var(--hue));
+  --inverse-on-surface: oklch(26% 0.02 var(--hue));
+  --inverse-primary: oklch(46% 0.15 var(--hue));
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4), 0 1px 3px 1px rgba(0,0,0,.25);
+  --shadow-2: 0 1px 2px rgba(0,0,0,.4), 0 2px 6px 2px rgba(0,0,0,.3);
+  --shadow-3: 0 4px 8px 3px rgba(0,0,0,.3), 0 1px 3px rgba(0,0,0,.4);
+}
+
+/* ============ 基础 ============ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  background:var(--surface);
+  color:var(--on-surface);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color .4s var(--ease-std), color .4s var(--ease-std);
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;border:0;background:none;color:inherit;cursor:pointer}
+code,pre,kbd{font-family:var(--mono)}
+::selection{background:var(--primary-container);color:var(--on-primary-container)}
+.container{width:min(1120px, 100% - 40px);margin-inline:auto}
+@media (max-width:600px){.container{width:min(1120px, 100% - 32px)}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* Typography (M3 type scale) */
+.display-lg{font-size:clamp(2.6rem,6vw,3.6rem);line-height:1.1;font-weight:500;letter-spacing:-.02em}
+.headline-lg{font-size:2rem;line-height:1.25;font-weight:500;letter-spacing:-.01em}
+.headline-md{font-size:1.75rem;line-height:1.3;font-weight:500}
+.headline-sm{font-size:1.5rem;line-height:1.35;font-weight:500}
+.title-lg{font-size:1.375rem;line-height:1.35;font-weight:500}
+.title-md{font-size:1rem;line-height:1.5;font-weight:600;letter-spacing:.01em}
+.body-lg{font-size:1.06rem;line-height:1.65;color:var(--on-surface-variant)}
+.body-md{font-size:.925rem;line-height:1.6;color:var(--on-surface-variant)}
+.label-lg{font-size:.875rem;font-weight:600;letter-spacing:.01em}
+.label-md{font-size:.75rem;font-weight:600;letter-spacing:.04em}
+
+/* ============ Ripple / State layer ============ */
+.ripple{position:relative;overflow:hidden;isolation:isolate}
+.ripple::after{content:"";position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .2s;pointer-events:none;border-radius:inherit}
+.ripple:hover::after{opacity:.08}
+.ripple:active::after{opacity:.12}
+.ripple .ink{position:absolute;border-radius:50%;background:currentColor;opacity:.18;transform:scale(0);animation:ink .6s var(--ease-emph) forwards;pointer-events:none}
+@keyframes ink{to{transform:scale(2.6);opacity:0}}
+
+/* ============ Buttons ============ */
+.btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 24px;border-radius:var(--r-full);font-weight:600;font-size:.925rem;letter-spacing:.01em;transition:box-shadow .2s,transform .2s var(--ease-emph),background .3s;white-space:nowrap}
+.btn svg{width:18px;height:18px;flex:none}
+.btn.lg{height:52px;padding:0 28px;font-size:1rem}
+.btn.filled{background:var(--primary);color:var(--on-primary)}
+.btn.filled:hover{box-shadow:var(--shadow-1)}
+.btn.tonal{background:var(--secondary-container);color:var(--on-secondary-container)}
+.btn.outlined{border:1px solid var(--outline);color:var(--primary)}
+.btn.text{color:var(--primary);padding:0 12px}
+.btn.elevated{background:var(--surface-container-low);color:var(--primary);box-shadow:var(--shadow-1)}
+.icon-btn{width:40px;height:40px;border-radius:50%;display:inline-grid;place-items:center;color:var(--on-surface-variant);transition:background .2s}
+.icon-btn svg{width:22px;height:22px}
+.icon-btn.tonal{background:var(--secondary-container);color:var(--on-secondary-container)}
+
+/* ============ Top App Bar ============ */
+.appbar{position:sticky;top:0;z-index:50;height:64px;display:flex;align-items:center;background:color-mix(in oklch, var(--surface) 80%, transparent);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);transition:background .3s,box-shadow .3s}
+.appbar.scrolled{background:color-mix(in oklch, var(--surface-container) 88%, transparent);box-shadow:var(--shadow-1)}
+.appbar .container{display:flex;align-items:center;gap:8px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:600;font-size:1.1rem;margin-right:auto}
+.brand .logo{width:36px;height:36px;border-radius:12px;background:var(--primary-container);color:var(--on-primary-container);display:grid;place-items:center}
+.brand .logo svg{width:22px;height:22px}
+.nav{display:flex;gap:4px;margin-right:8px}
+.nav a{padding:8px 14px;border-radius:var(--r-full);font-size:.9rem;font-weight:500;color:var(--on-surface-variant)}
+.nav a:hover{background:var(--surface-container-high);color:var(--on-surface)}
+@media (max-width:820px){.nav{display:none}}
+
+/* ============ Hero ============ */
+.hero{position:relative;padding:72px 0 64px;overflow:hidden}
+.hero .container{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+@media (max-width:900px){.hero .container{grid-template-columns:1fr}.hero{padding:48px 0 40px}}
+.hero-bg{position:absolute;inset:0;z-index:-1;pointer-events:none}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;animation:float 14s ease-in-out infinite alternate}
+.blob.a{width:520px;height:520px;background:var(--primary-container);top:-180px;right:-120px}
+.blob.b{width:420px;height:420px;background:var(--tertiary-container);bottom:-200px;left:-160px;animation-delay:-6s}
+@keyframes float{from{transform:translate(0,0) scale(1)}to{transform:translate(-30px,40px) scale(1.08)}}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border-radius:var(--r-full);background:var(--tertiary-container);color:var(--on-tertiary-container);font-size:.8rem;font-weight:600;margin-bottom:24px}
+.eyebrow .dot{width:20px;height:20px;border-radius:50%;background:var(--tertiary);display:grid;place-items:center}
+.eyebrow .dot svg{width:12px;height:12px;color:#fff}
+.hero h1{margin-bottom:20px}
+.hero h1 .accent{color:var(--primary)}
+.hero p{max-width:540px;margin-bottom:32px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:var(--r-sm);border:1px solid var(--outline-variant);font-size:.8rem;font-weight:500;color:var(--on-surface-variant)}
+.chip svg{width:16px;height:16px;color:var(--primary)}
+
+/* Hero 演示卡 */
+.demo-card{background:var(--surface-container-low);border-radius:var(--r-xl);padding:24px;box-shadow:var(--shadow-2);position:relative}
+.demo-card .bar{display:flex;align-items:center;gap:8px;margin-bottom:20px;color:var(--on-surface-variant);font-size:.8rem}
+.demo-card .bar i{width:10px;height:10px;border-radius:50%;background:var(--outline-variant);display:inline-block}
+.field{position:relative;display:flex;align-items:center;background:var(--surface-container-highest);border-radius:var(--r-xs) var(--r-xs) 0 0;border-bottom:1px solid var(--on-surface-variant);height:56px;padding:0 16px;gap:12px;transition:border-color .2s}
+.field:focus-within{border-bottom:2px solid var(--primary)}
+.field label{position:absolute;left:52px;top:6px;font-size:.7rem;color:var(--primary);font-weight:500}
+.field input{flex:1;background:none;border:0;outline:0;color:var(--on-surface);font:inherit;font-size:.92rem;padding-top:14px;min-width:0}
+.field svg{width:22px;height:22px;color:var(--on-surface-variant);flex:none}
+.demo-run{margin-top:16px;display:flex;justify-content:flex-end}
+.steps{margin-top:20px;display:grid;gap:10px}
+.step{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--r-md);background:var(--surface-container);font-size:.875rem;opacity:.5;transition:opacity .3s,background .3s,transform .4s var(--ease-emph)}
+.step .ic{width:28px;height:28px;border-radius:50%;background:var(--surface-container-highest);display:grid;place-items:center;flex:none;transition:background .3s}
+.step .ic svg{width:16px;height:16px;color:var(--on-surface-variant)}
+.step .st{margin-left:auto;font-size:.72rem;font-weight:600;color:var(--on-surface-variant);letter-spacing:.03em}
+.step.active{opacity:1;background:var(--secondary-container);color:var(--on-secondary-container)}
+.step.active .ic{background:var(--primary)}
+.step.active .ic svg{color:var(--on-primary);animation:spin 1s linear infinite}
+.step.done{opacity:1}
+.step.done .ic{background:var(--primary-container)}
+.step.done .ic svg{color:var(--on-primary-container)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress{height:4px;border-radius:var(--r-full);background:var(--surface-container-highest);overflow:hidden;margin-top:16px}
+.progress i{display:block;height:100%;width:0;background:var(--primary);border-radius:inherit;transition:width .5s var(--ease-std)}
+.demo-result{margin-top:16px;padding:14px 16px;border-radius:var(--r-lg);background:var(--primary-container);color:var(--on-primary-container);font-size:.875rem;display:none;align-items:center;gap:12px}
+.demo-result.show{display:flex;animation:pop .5s var(--ease-emph)}
+.demo-result svg{width:22px;height:22px;flex:none}
+.demo-result code{font-size:.78rem;opacity:.85}
+@keyframes pop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ============ Sections ============ */
+section{padding:72px 0}
+@media (max-width:600px){section{padding:52px 0}}
+.section-head{max-width:640px;margin-bottom:40px}
+.section-head .kicker{color:var(--primary);font-weight:600;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;display:block}
+.section-head h2{margin-bottom:12px}
+
+/* 痛点对比 */
+.pain{background:var(--surface-container-low);border-radius:var(--r-xl) var(--r-xl) 0 0}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:800px){.compare{grid-template-columns:1fr}}
+.cmp-card{border-radius:var(--r-xl);padding:28px;position:relative;overflow:hidden}
+.cmp-card.bad{background:var(--surface-container-highest);color:var(--on-surface)}
+.cmp-card.good{background:var(--primary-container);color:var(--on-primary-container)}
+.cmp-card h3{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.cmp-card h3 svg{width:26px;height:26px}
+.cmp-card .sub{font-size:.9rem;opacity:.8;margin-bottom:24px}
+.route{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:22px;font-size:.85rem;font-weight:500}
+.route .node{padding:6px 12px;border-radius:var(--r-full);background:color-mix(in oklch, currentColor 10%, transparent)}
+.route .arrow{opacity:.5}
+.speed{display:grid;gap:10px}
+.speed .row{display:grid;grid-template-columns:96px 1fr 64px;align-items:center;gap:12px;font-size:.85rem}
+.speed .track{height:10px;border-radius:var(--r-full);background:color-mix(in oklch, currentColor 12%, transparent);overflow:hidden}
+.speed .fill{height:100%;width:0;border-radius:inherit;background:currentColor;transition:width 1.4s var(--ease-emph)}
+.cmp-card.bad .fill{background:var(--error)}
+.cmp-card.good .fill{background:var(--primary)}
+.speed .val{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.note{margin-top:20px;font-size:.8rem;color:var(--on-surface-variant)}
+
+/* 工作原理 */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;counter-reset:s}
+@media (max-width:1000px){.flow{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.flow{grid-template-columns:1fr}}
+.flow-card{background:var(--surface-container);border-radius:var(--r-xl);padding:24px;position:relative;transition:transform .3s var(--ease-emph),background .3s}
+.flow-card:hover{background:var(--surface-container-high);transform:translateY(-3px)}
+.flow-card .num{width:44px;height:44px;border-radius:14px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;font-weight:600;margin-bottom:18px}
+.flow-card .num svg{width:22px;height:22px}
+.flow-card h3{font-size:1.1rem;margin-bottom:8px}
+.flow-card code{display:inline-block;margin-top:12px;font-size:.75rem;background:var(--surface-container-highest);padding:4px 8px;border-radius:var(--r-xs);color:var(--on-surface-variant);word-break:break-all}
+
+/* 特性 bento */
+.features{background:var(--surface-container-low)}
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+.bento .card{background:var(--surface-container-lowest);border-radius:var(--r-xl);padding:26px;grid-column:span 2;transition:box-shadow .3s,transform .3s var(--ease-emph)}
+.bento .card:hover{box-shadow:var(--shadow-2);transform:translateY(-2px)}
+.bento .card.wide{grid-column:span 3}
+.bento .card.accent{background:var(--tertiary-container);color:var(--on-tertiary-container)}
+.bento .card.accent .fi{background:var(--tertiary);color:#fff}
+.bento .card.prim{background:var(--primary);color:var(--on-primary)}
+.bento .card.prim .fi{background:var(--on-primary);color:var(--primary)}
+.bento .card.prim p{color:inherit;opacity:.85}
+.bento .card.accent p{color:inherit;opacity:.85}
+@media (max-width:900px){.bento .card,.bento .card.wide{grid-column:span 3}}
+@media (max-width:560px){.bento .card,.bento .card.wide{grid-column:span 6}}
+.fi{width:48px;height:48px;border-radius:16px;background:var(--secondary-container);color:var(--on-secondary-container);display:grid;place-items:center;margin-bottom:18px}
+.fi svg{width:24px;height:24px}
+.bento h3{font-size:1.15rem;margin-bottom:8px}
+.bigstat{font-size:3rem;font-weight:500;letter-spacing:-.03em;line-height:1;margin-bottom:6px}
+
+/* 使用步骤 */
+.usage-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+@media (max-width:900px){.usage-grid{grid-template-columns:1fr}}
+.timeline{display:grid;gap:0}
+.tl{display:grid;grid-template-columns:48px 1fr;gap:16px;position:relative;padding-bottom:28px}
+.tl:not(:last-child)::before{content:"";position:absolute;left:23px;top:48px;bottom:0;width:2px;background:var(--outline-variant)}
+.tl .dot{width:48px;height:48px;border-radius:50%;background:var(--secondary-container);color:var(--on-secondary-container);display:grid;place-items:center;font-weight:600}
+.tl h3{font-size:1.1rem;margin:10px 0 6px}
+.tl kbd{background:var(--surface-container-high);padding:2px 8px;border-radius:var(--r-xs);font-size:.8rem;border:1px solid var(--outline-variant)}
+.codeblock{background:var(--inverse-surface);color:var(--inverse-on-surface);border-radius:var(--r-lg);overflow:hidden;font-size:.85rem}
+.codeblock .head{display:flex;align-items:center;gap:6px;padding:10px 12px 10px 16px;border-bottom:1px solid color-mix(in oklch, var(--inverse-on-surface) 15%, transparent)}
+.codeblock .head span{margin-right:auto;font-size:.78rem;opacity:.7}
+.codeblock pre{padding:16px 18px;overflow-x:auto;line-height:1.7;margin:0}
+.codeblock .c{opacity:.55}
+.codeblock .k{color:var(--inverse-primary)}
+.copy{height:32px;padding:0 12px;border-radius:var(--r-full);display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:var(--inverse-on-surface);background:color-mix(in oklch, var(--inverse-on-surface) 10%, transparent)}
+.copy svg{width:15px;height:15px}
+.seg{display:inline-flex;border:1px solid var(--outline);border-radius:var(--r-full);overflow:hidden;margin-bottom:14px}
+.seg button{height:38px;padding:0 18px;font-size:.85rem;font-weight:500;color:var(--on-surface);display:flex;align-items:center;gap:6px;border-right:1px solid var(--outline);transition:background .2s}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--secondary-container);color:var(--on-secondary-container)}
+.seg button svg{width:16px;height:16px}
+.merge-card{background:var(--surface-container);border-radius:var(--r-xl);padding:24px;position:sticky;top:88px}
+.merge-card h3{margin-bottom:6px}
+.merge-card > p{margin-bottom:18px}
+.yaml{margin-top:20px}
+
+/* FAQ */
+.faq{background:var(--surface-container-low)}
+.faq-list{display:grid;gap:10px;max-width:820px}
+details{background:var(--surface-container-lowest);border-radius:var(--r-lg);overflow:hidden;transition:border-radius .3s}
+details[open]{border-radius:var(--r-xl)}
+summary{list-style:none;display:flex;align-items:center;gap:14px;padding:18px 22px;cursor:pointer;font-weight:500;font-size:1rem}
+summary::-webkit-details-marker{display:none}
+summary .chev{margin-left:auto;width:32px;height:32px;border-radius:50%;background:var(--surface-container-high);display:grid;place-items:center;flex:none;transition:transform .35s var(--ease-emph),background .3s}
+summary .chev svg{width:18px;height:18px}
+details[open] summary .chev{transform:rotate(180deg);background:var(--primary-container);color:var(--on-primary-container)}
+details .body{padding:0 22px 20px 22px;color:var(--on-surface-variant);font-size:.925rem}
+details .body code{background:var(--surface-container-high);padding:1px 6px;border-radius:4px;font-size:.82rem}
+
+/* CTA */
+.cta{padding:32px 0 80px}
+.cta-card{background:var(--primary);color:var(--on-primary);border-radius:var(--r-xl);padding:56px 40px;text-align:center;position:relative;overflow:hidden}
+.cta-card::before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;background:var(--inverse-primary);opacity:.35;filter:blur(60px);right:-140px;top:-160px}
+.cta-card::after{content:"";position:absolute;width:320px;height:320px;border-radius:50%;background:var(--tertiary-container);opacity:.35;filter:blur(60px);left:-100px;bottom:-160px}
+.cta-card > *{position:relative}
+.cta-card h2{margin-bottom:12px}
+.cta-card p{opacity:.85;margin-bottom:28px;max-width:520px;margin-inline:auto}
+.cta-card .btn.filled{background:var(--on-primary);color:var(--primary)}
+.cta-card .btn.outlined{border-color:color-mix(in oklch, var(--on-primary) 50%, transparent);color:var(--on-primary)}
+
+/* Footer */
+footer{padding:28px 0 40px;color:var(--on-surface-variant);font-size:.85rem}
+footer .container{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+footer a{color:var(--primary);font-weight:500}
+
+/* 主题 / 取色面板 */
+.palette{position:fixed;right:20px;bottom:20px;z-index:60;display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.fab{width:56px;height:56px;border-radius:16px;background:var(--primary-container);color:var(--on-primary-container);display:grid;place-items:center;box-shadow:var(--shadow-3);transition:transform .3s var(--ease-emph),box-shadow .3s}
+.fab:hover{box-shadow:var(--shadow-3);transform:translateY(-2px)}
+.fab svg{width:24px;height:24px}
+.swatches{display:flex;gap:10px;padding:12px;border-radius:var(--r-xl);background:var(--surface-container-high);box-shadow:var(--shadow-3);transform:scale(.8) translateY(20px);opacity:0;pointer-events:none;transform-origin:bottom right;transition:transform .35s var(--ease-emph),opacity .25s}
+.swatches.open{transform:none;opacity:1;pointer-events:auto}
+.sw{width:32px;height:32px;border-radius:50%;border:3px solid transparent;transition:transform .2s,border-color .2s;background:oklch(60% 0.15 var(--h))}
+.sw:hover{transform:scale(1.12)}
+.sw.on{border-color:var(--on-surface)}
+
+/* Snackbar */
+.snackbar{position:fixed;left:50%;bottom:24px;transform:translate(-50%,120%);background:var(--inverse-surface);color:var(--inverse-on-surface);padding:14px 20px;border-radius:var(--r-xs);box-shadow:var(--shadow-3);font-size:.9rem;z-index:70;transition:transform .35s var(--ease-emph);display:flex;gap:12px;align-items:center}
+.snackbar.show{transform:translate(-50%,0)}
+.snackbar svg{width:18px;height:18px;color:var(--inverse-primary)}
+
+/* Reveal */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s var(--ease-std),transform .6s var(--ease-emph)}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<!-- ===== SVG 图标库 ===== -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-download" viewBox="0 0 24 24"><path fill="currentColor" d="M12 16 7 11l1.4-1.4 2.6 2.6V4h2v8.2l2.6-2.6L17 11l-5 5Zm-6 4q-.8 0-1.4-.6T4 18v-3h2v3h12v-3h2v3q0 .8-.6 1.4T18 20H6Z"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path fill="currentColor" d="m8 22 1-7H5.5l7.5-11h1l-1 7H17L9 22H8Z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path fill="currentColor" d="M11 17H7q-2.1 0-3.55-1.45T2 12q0-2.1 1.45-3.55T7 7h4v2H7q-1.25 0-2.125.875T4 12q0 1.25.875 2.125T7 15h4v2Zm-3-4v-2h8v2H8Zm5 4v-2h4q1.25 0 2.125-.875T20 12q0-1.25-.875-2.125T17 9h-4V7h4q2.1 0 3.55 1.45T22 12q0 2.1-1.45 3.55T17 17h-4Z"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path fill="currentColor" d="M6.5 20q-2.3 0-3.9-1.6T1 14.5q0-2 1.2-3.55T5.25 9q.65-2.4 2.6-3.7T12 4q2.9 0 4.95 2.05T19 11q1.75.2 2.875 1.525T23 15.5q0 1.9-1.3 3.2T18.5 20h-12Z"/></symbol>
+  <symbol id="i-cut" viewBox="0 0 24 24"><path fill="currentColor" d="M9.6 12 6.8 9.2q-.35.15-.65.225T5.5 9.5q-1.45 0-2.475-1.025T2 6q0-1.45 1.025-2.475T5.5 2.5q1.45 0 2.475 1.025T9 6q0 .35-.075.65T8.7 7.3l2.8 2.8 8.5-8.5H23L13.4 11.1l1.6 1.6v.05l-1.4 1.4-2-2-1.4 1.4 2.35 2.35q.1.3.175.6t.075.6q0 1.45-1.025 2.475T9.3 21.6q-1.45 0-2.475-1.025T5.8 18.1q0-1.45 1.025-2.475T9.3 14.6q.35 0 .65.05t.6.15l1.45-1.45L9.6 12ZM5.5 7.5q.65 0 1.075-.425T7 6q0-.65-.425-1.075T5.5 4.5q-.65 0-1.075.425T4 6q0 .65.425 1.075T5.5 7.5Zm3.8 12.1q.65 0 1.075-.425T10.8 18.1q0-.65-.425-1.075T9.3 16.6q-.65 0-1.075.425T7.8 18.1q0 .65.425 1.075T9.3 19.6Z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4 9.55 18Z"/></symbol>
+  <symbol id="i-sync" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20q-3.35 0-5.675-2.325T4 12q0-3.35 2.325-5.675T12 4q1.725 0 3.3.712T18 6.75V4h2v7h-7V9h4.2q-.8-1.4-2.187-2.2T12 6Q9.5 6 7.75 7.75T6 12q0 2.5 1.75 4.25T12 18q1.925 0 3.475-1.1T17.65 14h2.1q-.7 2.65-2.85 4.325T12 20Z"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path fill="currentColor" d="M6 21v-3.1L2 14l1.4-1.4 2.6 2.6V14q0-4.4 2.85-7.925T16 1.9q.85 3.2.2 6.375t-2.35 5.85L12 16v5H6Zm6-13q0 .825.588 1.413T14 10q.825 0 1.413-.587T16 8q0-.825-.587-1.412T14 6q-.825 0-1.412.588T12 8Z"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path fill="currentColor" d="m21.4 11.6-9-9Q12.1 2.3 11.7 2.15T10.9 2H4q-.8 0-1.4.6T2 4v6.9q0 .4.15.8t.45.7l9 9q.6.6 1.4.6t1.4-.6l7-7q.6-.6.6-1.4t-.6-1.4ZM6.5 8q-.625 0-1.062-.437T5 6.5q0-.625.438-1.062T6.5 5q.625 0 1.063.438T8 6.5q0 .625-.437 1.063T6.5 8Z"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V6.5q0-.375.125-.7T3.5 5.2L4.9 3.5q.2-.25.45-.375T5.9 3h12.2q.3 0 .55.125t.45.375l1.4 1.7q.25.275.375.6T21 6.5V19q0 .825-.587 1.413T19 21H5Zm.4-15h13.2l-.85-1H6.25L5.4 6ZM12 18l4-4-1.4-1.4-1.6 1.6V10h-2v4.2l-1.6-1.6L8 14l4 4Z"/></symbol>
+  <symbol id="i-fork" viewBox="0 0 24 24"><path fill="currentColor" d="M12 23q-1.25 0-2.125-.875T9 20q0-.975.55-1.737T11 17.2v-2.55L6 11.85V6.8q-.9-.35-1.45-1.1T4 4q0-1.25.875-2.125T7 1q1.25 0 2.125.875T10 4q0 .95-.55 1.7T8 6.8v3.9l4 2.05 4-2.05V6.8q-.9-.35-1.45-1.1T14 4q0-1.25.875-2.125T17 1q1.25 0 2.125.875T20 4q0 .95-.55 1.7T18 6.8v5.05l-5 2.8v2.55q.9.3 1.45 1.062T15 20q0 1.25-.875 2.125T12 23Z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 19V5l11 7-11 7Z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><path fill="currentColor" d="M9 18q-.825 0-1.412-.587T7 16V4q0-.825.588-1.412T9 2h9q.825 0 1.413.588T20 4v12q0 .825-.587 1.413T18 18H9Zm-4 4q-.825 0-1.412-.587T3 20V6h2v14h11v2H5Z"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path fill="currentColor" d="M12 15.4 6 9.4 7.4 8l4.6 4.6L16.6 8 18 9.4l-6 6Z"/></symbol>
+  <symbol id="i-dark" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21q-3.75 0-6.375-2.625T3 12q0-3.75 2.625-6.375T12 3q.35 0 .688.025t.662.075q-1.025.725-1.637 1.887T11.1 7.5q0 2.25 1.575 3.825T16.5 12.9q1.375 0 2.525-.613T20.9 10.65q.05.325.075.662T21 12q0 3.75-2.625 6.375T12 21Z"/></symbol>
+  <symbol id="i-light" viewBox="0 0 24 24"><path fill="currentColor" d="M12 17q-2.075 0-3.537-1.463T7 12q0-2.075 1.463-3.537T12 7q2.075 0 3.538 1.463T17 12q0 2.075-1.463 3.538T12 17ZM2 13v-2h4v2H2Zm16 0v-2h4v2h-4Zm-7-7V2h2v4h-2Zm0 16v-4h2v4h-2ZM6.35 7.75 3.85 5.3l1.4-1.45 2.45 2.5-1.35 1.4Zm12.3 12.4-2.45-2.5 1.35-1.4 2.5 2.45-1.4 1.45ZM16.2 6.35l2.45-2.5 1.45 1.4-2.5 2.45-1.4-1.35ZM3.8 18.7l2.5-2.45 1.4 1.35-2.45 2.5-1.45-1.4Z"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path fill="currentColor" d="M12 22q-2.05 0-3.875-.788t-3.187-2.15q-1.363-1.362-2.15-3.187T2 12q0-2.075.813-3.9t2.2-3.175Q6.4 3.575 8.25 2.787T12.2 2q2 0 3.775.688t3.113 1.9q1.337 1.212 2.125 2.875T22 11.05q0 2.875-1.75 4.412T16 17h-1.85q-.225 0-.312.125t-.088.275q0 .3.375.863t.375 1.287q0 1.25-.687 1.85T12 22Zm-5.5-9q.65 0 1.075-.425T8 11.5q0-.65-.425-1.075T6.5 10q-.65 0-1.075.425T5 11.5q0 .65.425 1.075T6.5 13Zm3-4q.65 0 1.075-.425T11 7.5q0-.65-.425-1.075T9.5 6q-.65 0-1.075.425T8 7.5q0 .65.425 1.075T9.5 9Zm5 0q.65 0 1.075-.425T16 7.5q0-.65-.425-1.075T14.5 6q-.65 0-1.075.425T13 7.5q0 .65.425 1.075T14.5 9Zm3 4q.65 0 1.075-.425T19 11.5q0-.65-.425-1.075T17.5 10q-.65 0-1.075.425T16 11.5q0 .65.425 1.075T17.5 13Z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><path fill="currentColor" d="M6 22q-.825 0-1.412-.587T4 20V10q0-.825.588-1.412T6 8h1V6q0-2.075 1.463-3.537T12 1q2.075 0 3.538 1.463T17 6v2h1q.825 0 1.413.588T20 10v10q0 .825-.587 1.413T18 22H6Zm6-5q.825 0 1.413-.587T14 15q0-.825-.587-1.412T12 13q-.825 0-1.412.588T10 15q0 .825.588 1.413T12 17ZM9 8h6V6q0-1.25-.875-2.125T12 3q-1.25 0-2.125.875T9 6v2Z"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><path fill="currentColor" d="M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20H4Zm0-2h16V8H4v10Zm6-2-1.4-1.4 2.6-2.6-2.6-2.6L10 8l4 4-4 4Z"/></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h7v2H5v14h14v-7h2v7q0 .825-.587 1.413T19 21H5Zm4.7-5.3-1.4-1.4L17.6 5H14V3h7v7h-2V6.4l-9.3 9.3Z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><path fill="currentColor" d="M12 22q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22Zm0-2.05q.65-.9 1.125-1.875T13.9 16h-3.8q.3 1.1.775 2.075T12 19.95ZM9.4 19.6q-.45-.825-.787-1.713T8.05 16H5.1q.725 1.25 1.813 2.175T9.4 19.6Zm5.2 0q1.4-.5 2.488-1.425T18.9 16h-2.95q-.225 1-.562 1.888T14.6 19.6ZM4.25 14h3.4q-.075-.5-.112-.988T7.5 12q0-.525.038-1.012T7.65 10h-3.4q-.125.5-.187.988T4 12q0 .525.063 1.012T4.25 14Zm5.4 0h4.7q.075-.5.113-.988T14.5 12q0-.525-.037-1.012T14.35 10h-4.7q-.075.5-.112.988T9.5 12q0 .525.038 1.012T9.65 14Zm6.7 0h3.4q.125-.5.188-.988T20 12q0-.525-.062-1.012T19.75 10h-3.4q.075.5.113.988T16.5 12q0 .525-.037 1.012T16.35 14Zm-.4-6h2.95q-.725-1.25-1.812-2.175T14.6 4.4q.45.825.788 1.713T15.95 8ZM10.1 8h3.8q-.3-1.1-.775-2.075T12 4.05q-.65.9-1.125 1.875T10.1 8Zm-5 0h2.95q.225-1 .563-1.888T9.4 4.4q-1.4.5-2.488 1.425T5.1 8Z"/></symbol>
+  <symbol id="i-win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5 11 4.4v7.1H3V5.5Zm0 13 8 1.1v-7.1H3v6Zm9 1.2 9 1.3v-8.5h-9v7.2ZM12 4.3V11.5h9V3l-9 1.3Z"/></symbol>
+  <symbol id="i-apple" viewBox="0 0 24 24"><path fill="currentColor" d="M16.4 12.7c0-2.5 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.1 2.5-1.8 3.1-.5 7.6 1.3 10.1.9 1.2 1.9 2.6 3.2 2.5 1.3-.1 1.8-.8 3.3-.8 1.5 0 2 .8 3.3.8 1.4 0 2.3-1.2 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9-.1 0-2.9-1.1-2.9-4ZM13.9 5.4c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.4-.6 3.1-1.5Z"/></symbol>
+  <symbol id="i-linux" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2c-2.2 0-3.6 1.8-3.6 4.4 0 1.1.2 1.9.1 2.7-.3 1.3-1.7 2.6-2.5 4.4-.6 1.3-.7 2.6-.4 3.5-.6.4-1.3.9-1.4 1.5-.1.7.4 1.1 1.3 1.4.8.3 1.7 1 2.6 1.1.8.1 1.3-.4 1.6-.8.9.1 2 .1 3.1.1.9 0 1.7 0 2.4-.1.3.5.9.9 1.7.8.9-.1 1.6-.8 2.5-1.1.9-.3 1.5-.7 1.4-1.4-.1-.6-.9-1-1.5-1.4.3-1 .1-2.3-.5-3.6-.9-1.8-2.2-3-2.5-4.3-.2-.8 0-1.6 0-2.8C15.7 3.8 14.2 2 12 2Zm-1.2 4.2c.5 0 .8.5.8 1.2s-.3 1.2-.8 1.2c-.4 0-.8-.5-.8-1.2s.4-1.2.8-1.2Zm2.6 0c.5 0 .9.6.9 1.3 0 .6-.3 1.1-.7 1.2l-.4-.1c.1-.2.2-.4.2-.6 0-.4-.2-.7-.5-.7-.2 0-.4.3-.4.7v.2c-.2-.2-.3-.5-.3-.8 0-.7.5-1.2 1.2-1.2Zm-1.4 2.8c.6 0 1.2.2 1.7.6.2.2.3.5 0 .7-.6.5-1.1 1-1.7 1-.6 0-1.3-.6-1.7-1-.2-.2-.2-.5 0-.7.5-.4 1.1-.6 1.7-.6Zm-2.3 3.1c.2 1.1 1.1 2.4 1.5 3.3.6 1.3.9 2.7.5 3.9h-.1c-.4 0-.9-.2-1-.7-.2-1 0-2.2-.5-3-.4-.7-1-1-1.2-1.8-.1-.6.3-1.4.8-1.7Zm4.6 0c.6.3 1 1.2.8 1.8-.2.7-.8 1.1-1.2 1.8-.5.8-.3 2-.5 3-.1.5-.6.7-1 .7.1-1.4-.1-2.9.5-4 .5-1 1.3-2.2 1.4-3.3Z"/></symbol>
+  <symbol id="i-git" viewBox="0 0 24 24"><path fill="currentColor" d="M11 22V9.85q-1.3-.35-2.15-1.4T8 6q0-1.65 1.175-2.825T12 2q1.65 0 2.825 1.175T16 6q0 1.4-.85 2.45T13 9.85V22h-2Zm1-14q.825 0 1.413-.587T14 6q0-.825-.587-1.412T12 4q-.825 0-1.412.588T10 6q0 .825.588 1.413T12 8Z"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><path fill="currentColor" d="M11.95 18q.525 0 .888-.363t.362-.887q0-.525-.362-.888t-.888-.362q-.525 0-.887.363t-.363.887q0 .525.363.888t.887.362Zm-.9-3.85h1.85q0-.825.188-1.3t1.062-1.3q.65-.65 1.025-1.238T15.55 8.9q0-1.4-1.025-2.15T12.1 6q-1.425 0-2.312.75T8.55 8.55l1.65.65q.125-.45.563-.975T12.1 7.7q.8 0 1.2.438t.4.962q0 .5-.3.938t-.75.812q-1.1.975-1.35 1.475t-.25 1.825ZM12 22q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22Z"/></symbol>
+</svg>
+
+<!-- ===== Top App Bar ===== -->
+<header class="appbar" id="appbar">
+  <div class="container">
+    <a class="brand" href="#top">
+      <span class="logo"><svg><use href="#i-download"/></svg></span>
+      <span>Action Downloader</span>
+    </a>
+    <nav class="nav">
+      <a href="#why">为什么</a>
+      <a href="#how">工作原理</a>
+      <a href="#features">特性</a>
+      <a href="#usage">使用方法</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <button class="icon-btn ripple" id="themeBtn" aria-label="切换深浅色主题" title="切换深浅色">
+      <svg id="themeIcon"><use href="#i-dark"/></svg>
+    </button>
+    <a class="btn tonal ripple" href="https://github.com/lingyicute/Action-tools" target="_blank" rel="noopener">
+      <svg><use href="#i-github"/></svg><span>GitHub</span>
+    </a>
+  </div>
+</header>
+
+<main id="top">
+<!-- ===== Hero ===== -->
+<section class="hero">
+  <div class="hero-bg"><div class="blob a"></div><div class="blob b"></div></div>
+  <div class="container">
+    <div>
+      <div class="eyebrow"><span class="dot"><svg><use href="#i-bolt"/></svg></span>开源 · 零成本 · Made with ❤️ by lingyicute</div>
+      <h1 class="display-lg">让 GitHub 替你下载，<br>用 <span class="accent">Release CDN</span> 送到你手边。</h1>
+      <p class="body-lg">在中国大陆下载海外资源常常只有几十 KB/s，甚至反复断线。Action Downloader 把下载链接交给 GitHub 的 Runner（实为 Azure VM）去抓取，再自动发布为 GitHub Release —— 而 Release 资源是有 CDN 加速的，直连即可跑满带宽。</p>
+      <div class="hero-actions">
+        <a class="btn filled lg ripple" href="https://github.com/lingyicute/Action-tools/fork" target="_blank" rel="noopener"><svg><use href="#i-fork"/></svg>Fork 并开始使用</a>
+        <a class="btn outlined lg ripple" href="https://github.com/lingyicute/Action-tools/blob/main/.github/workflows/downloader.yml" target="_blank" rel="noopener"><svg><use href="#i-terminal"/></svg>查看 downloader.yml</a>
+      </div>
+      <div class="hero-meta">
+        <span class="chip"><svg><use href="#i-check"/></svg>只需一个链接</span>
+        <span class="chip"><svg><use href="#i-cut"/></svg>≥ 2 GiB 自动分卷</span>
+        <span class="chip"><svg><use href="#i-archive"/></svg>Release + Artifact 双份</span>
+        <span class="chip"><svg><use href="#i-lock"/></svg>AGPL-3.0</span>
+      </div>
+    </div>
+
+    <!-- 交互演示 -->
+    <div class="demo-card" id="demo">
+      <div class="bar"><i></i><i></i><i></i><span style="margin-left:6px">Actions › Downloader › Run workflow</span></div>
+      <div class="field">
+        <svg><use href="#i-link"/></svg>
+        <label for="demoLink">LINK · The file link</label>
+        <input id="demoLink" type="url" placeholder="https://example.com/big-file.iso" value="https://dlc.openindiana.org/isos/hipster/20260430/OI-hipster-gui-20260430.usb">
+      </div>
+      <div class="demo-run">
+        <button class="btn filled ripple" id="runBtn"><svg><use href="#i-play"/></svg>Run workflow</button>
+      </div>
+      <div class="progress"><i id="prog"></i></div>
+      <div class="steps" id="steps">
+        <div class="step"><span class="ic"><svg><use href="#i-sync"/></svg></span>Checkout &amp; 安装 wget / tree<span class="st">等待</span></div>
+        <div class="step"><span class="ic"><svg><use href="#i-sync"/></svg></span>wget 高速拉取海外文件<span class="st">等待</span></div>
+        <div class="step"><span class="ic"><svg><use href="#i-sync"/></svg></span>检查体积，≥ 2 GiB 则 split<span class="st">等待</span></div>
+        <div class="step"><span class="ic"><svg><use href="#i-sync"/></svg></span>gh release create + 上传 Artifact<span class="st">等待</span></div>
+      </div>
+      <div class="demo-result" id="result">
+        <svg><use href="#i-tag"/></svg>
+        <div><strong>downloader-42</strong> 已发布 · Downloader 下载成功: 第 1 个文件<br><code>Releases › down.part00 · down.part01 · down.part02</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 痛点 ===== -->
+<section class="pain" id="why">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="kicker">为什么需要它</span>
+      <h2 class="headline-lg">同样是从境外拿文件，路径不同，速度天差地别</h2>
+      <p class="body-lg">跨境链路拥塞、丢包、限速，让直接下载海外服务器上的大文件变成一场煎熬。而 GitHub 的 Release 资源通过全球 CDN 分发，在大陆地区通常能保持稳定、可观的直连速度。把「跨境」这一段交给 GitHub 数据中心来完成，你只需要走最后一公里。</p>
+    </div>
+    <div class="compare">
+      <article class="cmp-card bad reveal">
+        <h3 class="title-lg"><svg><use href="#i-globe"/></svg>直接下载海外源站</h3>
+        <p class="sub">你的电脑 → 跨境链路 → 海外服务器</p>
+        <div class="route"><span class="node">本机</span><span class="arrow">→</span><span class="node">跨境出口 🐢</span><span class="arrow">→</span><span class="node">海外源站</span></div>
+        <div class="speed" data-speed>
+          <div class="row"><span>典型速度</span><div class="track"><div class="fill" data-w="6"></div></div><span class="val">~80 KB/s</span></div>
+          <div class="row"><span>稳定性</span><div class="track"><div class="fill" data-w="18"></div></div><span class="val">经常断</span></div>
+          <div class="row"><span>4 GB 耗时</span><div class="track"><div class="fill" data-w="100"></div></div><span class="val">14 h+</span></div>
+        </div>
+      </article>
+      <article class="cmp-card good reveal">
+        <h3 class="title-lg"><svg><use href="#i-rocket"/></svg>通过 Action Downloader</h3>
+        <p class="sub">GitHub 服务器 → 海外服务器（同在境外，飞快），再由 Release CDN → 你</p>
+        <div class="route"><span class="node">Runner ⚡ 源站</span><span class="arrow">→</span><span class="node">Release CDN</span><span class="arrow">→</span><span class="node">本机</span></div>
+        <div class="speed" data-speed>
+          <div class="row"><span>典型速度</span><div class="track"><div class="fill" data-w="92"></div></div><span class="val">跑满带宽</span></div>
+          <div class="row"><span>稳定性</span><div class="track"><div class="fill" data-w="96"></div></div><span class="val">可断点续传</span></div>
+          <div class="row"><span>4 GB 耗时</span><div class="track"><div class="fill" data-w="8"></div></div><span class="val">几分钟</span></div>
+        </div>
+      </article>
+    </div>
+    <p class="note reveal">* 速度数据为示意，实际取决于你的运营商、宽带以及源站响应情况；Runner 与海外源站之间的下载通常可达数十 MB/s 以上。</p>
+  </div>
+</section>
+
+<!-- ===== 工作原理 ===== -->
+<section id="how">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="kicker">工作原理</span>
+      <h2 class="headline-lg">一个 workflow，四步搞定</h2>
+      <p class="body-lg">整个流程就在 <code style="font-size:.9em">.github/workflows/downloader.yml</code> 里，逻辑一目了然、方便审计与修改。</p>
+    </div>
+    <div class="flow">
+      <article class="flow-card reveal">
+        <div class="num"><svg><use href="#i-link"/></svg></div>
+        <h3>输入链接触发</h3>
+        <p class="body-md">通过 <em>workflow_dispatch</em> 手动触发，只有一个必填参数 <strong>LINK</strong>——你要下载的文件地址。</p>
+        <code>on: workflow_dispatch → inputs.LINK</code>
+      </article>
+      <article class="flow-card reveal">
+        <div class="num"><svg><use href="#i-cloud"/></svg></div>
+        <h3>Runner 端 wget 下载</h3>
+        <p class="body-md">在 ubuntu-latest 上安装 wget、tree、coreutils，把文件抓取到 <em>downloads/down</em>。GitHub 到海外源站的链路又快又稳。</p>
+        <code>wget -O downloads/down '$LINK'</code>
+      </article>
+      <article class="flow-card reveal">
+        <div class="num"><svg><use href="#i-cut"/></svg></div>
+        <h3>大文件自动分卷</h3>
+        <p class="body-md">Release 单个附件上限 2 GiB。文件 ≥ 2 GiB 时自动按 2046 MiB 切分为 <em>down.part00、part01…</em>，本地一条命令即可合并。</p>
+        <code>split -b 2046M -d down down.part</code>
+      </article>
+      <article class="flow-card reveal">
+        <div class="num"><svg><use href="#i-tag"/></svg></div>
+        <h3>发布 Release + Artifact</h3>
+        <p class="body-md">用 gh CLI 创建名为 <em>downloader-N</em> 的 Release 并上传全部文件；同时再上传一份 Artifact 作为备份。</p>
+        <code>gh release create "downloader-N" *</code>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 特性 ===== -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="kicker">特性</span>
+      <h2 class="headline-lg">小而美，恰到好处</h2>
+    </div>
+    <div class="bento">
+      <article class="card prim wide reveal">
+        <div class="fi"><svg><use href="#i-bolt"/></svg></div>
+        <div class="bigstat">0 ¥</div>
+        <h3>零成本，无需服务器</h3>
+        <p class="body-md">公开仓库的 GitHub Actions 免费使用，不用买 VPS、不用配代理，Fork 就能用。</p>
+      </article>
+      <article class="card accent wide reveal">
+        <div class="fi"><svg><use href="#i-cut"/></svg></div>
+        <div class="bigstat">2 GiB</div>
+        <h3>大文件自动分卷</h3>
+        <p class="body-md">超过 Release 单附件上限时自动 split，并在 Release 说明里附上合并指令，不怕忘。</p>
+      </article>
+      <article class="card reveal">
+        <div class="fi"><svg><use href="#i-archive"/></svg></div>
+        <h3>双份存储</h3>
+        <p class="body-md">Release 走 CDN 长期保存；Artifact 作为备份，即使 Release 被清理也有退路。</p>
+      </article>
+      <article class="card reveal">
+        <div class="fi"><svg><use href="#i-terminal"/></svg></div>
+        <h3>只有 wget</h3>
+        <p class="body-md">不依赖任何第三方 Action 进行下载，只用 wget、split 和 gh CLI，行为透明可审计。</p>
+      </article>
+      <article class="card reveal">
+        <div class="fi"><svg><use href="#i-lock"/></svg></div>
+        <h3>最小权限</h3>
+        <p class="body-md">仅声明 <code style="font-size:.85em">contents: write</code>，使用仓库自带的 GITHUB_TOKEN，无需任何额外 Secret。</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 使用方法 ===== -->
+<section id="usage">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="kicker">使用方法</span>
+      <h2 class="headline-lg">三分钟上手</h2>
+    </div>
+    <div class="usage-grid">
+      <div class="timeline">
+        <div class="tl reveal">
+          <div class="dot">1</div>
+          <div>
+            <h3>Fork 仓库</h3>
+            <p class="body-md">打开 <a href="https://github.com/lingyicute/Action-tools" target="_blank" rel="noopener" style="color:var(--primary);font-weight:500">lingyicute/Action-tools</a>，点击右上角 <kbd>Fork</kbd>。建议保持仓库公开以享受免费 Actions 执行能力。</p>
+          </div>
+        </div>
+        <div class="tl reveal">
+          <div class="dot">2</div>
+          <div>
+            <h3>启用 Actions</h3>
+            <p class="body-md">进入你 Fork 后的仓库，切到 <kbd>Actions</kbd> 标签页。首次会提示「I understand my workflows, go ahead and enable them」，点击启用。</p>
+          </div>
+        </div>
+        <div class="tl reveal">
+          <div class="dot">3</div>
+          <div>
+            <h3>运行 Downloader</h3>
+            <p class="body-md">左侧选择 <kbd>Downloader</kbd>，点击 <kbd>Run workflow</kbd>，在 <strong>LINK</strong> 中粘贴要下载的文件直链，确认运行。</p>
+          </div>
+        </div>
+        <div class="tl reveal">
+          <div class="dot">4</div>
+          <div>
+            <h3>到 Releases 高速下载</h3>
+            <p class="body-md">等待 workflow 完成（取决于文件大小，通常几分钟），回到仓库首页右侧 <kbd>Releases</kbd>，找到 <em>downloader-N</em>，直接下载附件即可享受 CDN 速度。</p>
+          </div>
+        </div>
+        <div class="tl reveal">
+          <div class="dot"><svg width="22" height="22"><use href="#i-check"/></svg></div>
+          <div>
+            <h3>（可选）合并分卷</h3>
+            <p class="body-md">如果文件 ≥ 2 GiB 被切分成了多个 <code>.part</code>，下载全部分卷后使用右侧命令合并。合并后请自行重命名为原始文件名和扩展名。</p>
+          </div>
+        </div>
+      </div>
+
+      <aside class="merge-card reveal">
+        <h3 class="title-lg">分卷合并命令</h3>
+        <p class="body-md">选择你的系统，在所有 <code>down.part*</code> 所在目录执行。</p>
+        <div class="seg" role="tablist">
+          <button class="on ripple" data-os="linux" role="tab"><svg><use href="#i-linux"/></svg>Linux</button>
+          <button class="ripple" data-os="mac" role="tab"><svg><use href="#i-apple"/></svg>macOS</button>
+          <button class="ripple" data-os="win" role="tab"><svg><use href="#i-win"/></svg>Windows</button>
+        </div>
+        <div class="codeblock">
+          <div class="head"><span id="mergeLabel">bash</span><button class="copy ripple" data-copy="#mergeCode"><svg><use href="#i-copy"/></svg>复制</button></div>
+          <pre><code id="mergeCode"></code></pre>
+        </div>
+
+        <div class="codeblock yaml">
+          <div class="head"><span>downloader.yml · 核心片段</span><button class="copy ripple" data-copy="#yamlCode"><svg><use href="#i-copy"/></svg>复制</button></div>
+<pre><code id="yamlCode"><span class="k">on</span>:
+  <span class="k">workflow_dispatch</span>:
+    <span class="k">inputs</span>:
+      <span class="k">LINK</span>:
+        <span class="k">description</span>: 'The file link'
+        <span class="k">required</span>: true
+
+<span class="k">steps</span>:
+  - <span class="k">run</span>: wget -O downloads/down '${{ github.event.inputs.LINK }}'
+  - <span class="k">run</span>: |   <span class="c"># ≥ 2GiB 自动分卷</span>
+      split -b 2046M -d down down.part
+  - <span class="k">run</span>: gh release create "downloader-${{ github.run_number }}" *
+  - <span class="k">uses</span>: actions/upload-artifact@v4</code></pre>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FAQ ===== -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="kicker">常见问题</span>
+      <h2 class="headline-lg">你可能想问</h2>
+    </div>
+    <div class="faq-list">
+      <details class="reveal">
+        <summary><svg width="22" height="22" style="color:var(--primary)"><use href="#i-help"/></svg>为什么 Release 下载在大陆会比源站快？<span class="chev"><svg><use href="#i-expand"/></svg></span></summary>
+        <div class="body">GitHub Release 的附件由 GitHub 的对象存储与全球 CDN 分发，边缘节点覆盖广、链路质量好；而许多海外小站点、学术镜像、个人服务器只有单一节点，跨境访问时极易拥塞。Action Downloader 相当于把「跨境」这段由 GitHub 数据中心内部高速完成，你只需要从 CDN 拿结果。</div>
+      </details>
+      <details class="reveal">
+        <summary><svg width="22" height="22" style="color:var(--primary)"><use href="#i-help"/></svg>下载的文件为什么叫 <code style="margin:0 4px">down</code>，没有扩展名？<span class="chev"><svg><use href="#i-expand"/></svg></span></summary>
+        <div class="body">workflow 使用 <code>wget -O downloads/down</code> 统一命名，以简化后续分卷与发布逻辑。Release 说明里会记录原始链接，下载后自行重命名（例如加回 <code>.iso</code>、<code>.zip</code>）即可。你也可以 Fork 后修改这一行来保留原始文件名。</div>
+      </details>
+      <details class="reveal">
+        <summary><svg width="22" height="22" style="color:var(--primary)"><use href="#i-help"/></svg>为什么按 2046 MiB 切分而不是 2048？<span class="chev"><svg><use href="#i-expand"/></svg></span></summary>
+        <div class="body">GitHub Release 单个附件的上限是 2 GiB（2048 MiB）。取 2046 MiB 留出一点余量，避免恰好卡在边界导致上传失败。合并时按顺序拼接 <code>down.part00</code>、<code>down.part01</code>… 即可完整还原。</div>
+      </details>
+      <details class="reveal">
+        <summary><svg width="22" height="22" style="color:var(--primary)"><use href="#i-help"/></svg>有什么限制？<span class="chev"><svg><use href="#i-expand"/></svg></span></summary>
+        <div class="body">① 链接需要是无需登录、无需 Cookie 的直链；② 受 Runner 磁盘空间限制（大约十几 GB 可用），超大文件可能失败；③ 单个 job 最长运行 6 小时；④ Artifact 默认保留 90 天，Release 则长期保存；⑤ 请遵守 GitHub 服务条款，勿用于分发侵权或违规内容。</div>
+      </details>
+      <details class="reveal">
+        <summary><svg width="22" height="22" style="color:var(--primary)"><use href="#i-help"/></svg>需要配置 Token 或 Secret 吗？<span class="chev"><svg><use href="#i-expand"/></svg></span></summary>
+        <div class="body">不需要。workflow 使用 Actions 自带的 <code>GITHUB_TOKEN</code>，并声明了 <code>permissions: contents: write</code>，足以创建 Release。你唯一需要做的就是 Fork 并启用 Actions。</div>
+      </details>
+      <details class="reveal">
+        <summary><svg width="22" height="22" style="color:var(--primary)"><use href="#i-help"/></svg>私有仓库可以用吗？<span class="chev"><svg><use href="#i-expand"/></svg></span></summary>
+        <div class="body">可以，但私有仓库的 Actions 分钟数和存储空间有配额限制，且 Release 附件需要登录才能下载。如果内容不敏感，建议使用公开仓库。</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="cta">
+  <div class="container">
+    <div class="cta-card reveal">
+      <h2 class="headline-md">下一次遇到龟速下载，试试交给 GitHub</h2>
+      <p class="body-lg">Fork、启用 Actions、粘贴链接。剩下的，交给 Runner 和 CDN。</p>
+      <div class="hero-actions" style="justify-content:center;margin:0">
+        <a class="btn filled lg ripple" href="https://github.com/lingyicute/Action-tools/fork" target="_blank" rel="noopener"><svg><use href="#i-fork"/></svg>立即 Fork</a>
+        <a class="btn outlined lg ripple" href="https://github.com/lingyicute/Action-tools" target="_blank" rel="noopener"><svg><use href="#i-open"/></svg>访问仓库</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="container">
+    <div>Action Downloader · 来自 <a href="https://github.com/lingyicute/Action-tools" target="_blank" rel="noopener">lingyicute/Action-tools</a> · GPL-3.0 License</div>
+    <div>This page proudly features Material You design. ❤️</div>
+  </div>
+</footer>
+
+<!-- 动态取色 FAB -->
+<div class="palette">
+  <div class="swatches" id="swatches" role="group" aria-label="选择主题色">
+    <button class="sw on" style="--h:265" data-hue="265" aria-label="紫"></button>
+    <button class="sw" style="--h:230" data-hue="230" aria-label="蓝"></button>
+    <button class="sw" style="--h:190" data-hue="190" aria-label="青"></button>
+    <button class="sw" style="--h:150" data-hue="150" aria-label="绿"></button>
+    <button class="sw" style="--h:75" data-hue="75" aria-label="黄"></button>
+    <button class="sw" style="--h:40" data-hue="40" aria-label="橙"></button>
+    <button class="sw" style="--h:5" data-hue="5" aria-label="红"></button>
+    <button class="sw" style="--h:340" data-hue="340" aria-label="粉"></button>
+  </div>
+  <button class="fab ripple" id="paletteBtn" aria-label="动态取色" title="Material You 动态取色"><svg><use href="#i-palette"/></svg></button>
+</div>
+
+<div class="snackbar" id="snackbar"><svg><use href="#i-check"/></svg><span id="snackText">已复制</span></div>
+
+<script>
+(function(){
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+  const root = document.documentElement;
+
+  /* ---------- 主题：深浅色 ---------- */
+  const themeIcon = $('#themeIcon use');
+  function applyTheme(t){
+    root.setAttribute('data-theme', t);
+    themeIcon.setAttribute('href', t === 'dark' ? '#i-light' : '#i-dark');
+    localStorage.setItem('ad-theme', t);
+  }
+  const savedTheme = localStorage.getItem('ad-theme');
+  applyTheme(savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+  $('#themeBtn').addEventListener('click', () => applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+
+  /* ---------- 主题：动态取色 (seed hue) ---------- */
+  const swatches = $('#swatches');
+  function applyHue(h){
+    root.style.setProperty('--hue', h);
+    $$('.sw').forEach(b => b.classList.toggle('on', b.dataset.hue == h));
+    localStorage.setItem('ad-hue', h);
+  }
+  const savedHue = localStorage.getItem('ad-hue');
+  if (savedHue) applyHue(savedHue);
+  $('#paletteBtn').addEventListener('click', e => { e.stopPropagation(); swatches.classList.toggle('open'); });
+  swatches.addEventListener('click', e => { const b = e.target.closest('.sw'); if (b) applyHue(b.dataset.hue); });
+  document.addEventListener('click', e => { if (!e.target.closest('.palette')) swatches.classList.remove('open'); });
+
+  /* ---------- App bar 滚动阴影 ---------- */
+  const appbar = $('#appbar');
+  const onScroll = () => appbar.classList.toggle('scrolled', scrollY > 8);
+  addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  /* ---------- Ripple ---------- */
+  document.addEventListener('pointerdown', e => {
+    const el = e.target.closest('.ripple'); if (!el) return;
+    const r = el.getBoundingClientRect();
+    const size = Math.max(r.width, r.height);
+    const ink = document.createElement('span');
+    ink.className = 'ink';
+    ink.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - r.left - size/2}px;top:${e.clientY - r.top - size/2}px`;
+    el.appendChild(ink);
+    ink.addEventListener('animationend', () => ink.remove());
+  });
+
+  /* ---------- Reveal & 速度条 ---------- */
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      en.target.classList.add('in');
+      $$('.fill', en.target).forEach(f => { f.style.width = f.dataset.w + '%'; });
+      io.unobserve(en.target);
+    });
+  }, {threshold:.15});
+  $$('.reveal').forEach(el => io.observe(el));
+
+  /* ---------- Snackbar ---------- */
+  const snack = $('#snackbar'), snackText = $('#snackText'); let snackTimer;
+  function toast(msg){
+    snackText.textContent = msg; snack.classList.add('show');
+    clearTimeout(snackTimer); snackTimer = setTimeout(() => snack.classList.remove('show'), 2400);
+  }
+
+  /* ---------- 复制 ---------- */
+  $$('[data-copy]').forEach(btn => btn.addEventListener('click', async () => {
+    const text = $(btn.dataset.copy).innerText;
+    try { await navigator.clipboard.writeText(text); toast('已复制到剪贴板'); }
+    catch { toast('复制失败，请手动选择复制'); }
+  }));
+
+  /* ---------- 合并命令切换 ---------- */
+  const cmds = {
+    linux: { label:'bash', code:`# 在 down.part* 所在目录执行\ncat down.part* > down\n# 按需重命名，例如：\nmv down ubuntu-24.04-desktop-amd64.iso` },
+    mac:   { label:'zsh',  code:`# 在 down.part* 所在目录执行\ncat down.part* > down\n# 按需重命名，例如：\nmv down ubuntu-24.04-desktop-amd64.iso` },
+    win:   { label:'cmd',  code:`:: 在 down.part* 所在目录执行\ncopy /b down.part* down\n:: 按需重命名，例如：\nren down ubuntu-24.04-desktop-amd64.iso` }
+  };
+  const mergeCode = $('#mergeCode'), mergeLabel = $('#mergeLabel');
+  function setOS(os){
+    mergeCode.textContent = cmds[os].code; mergeLabel.textContent = cmds[os].label;
+    $$('.seg button').forEach(b => b.classList.toggle('on', b.dataset.os === os));
+  }
+  $$('.seg button').forEach(b => b.addEventListener('click', () => setOS(b.dataset.os)));
+  const ua = navigator.userAgent;
+  setOS(/Windows/i.test(ua) ? 'win' : /Mac/i.test(ua) ? 'mac' : 'linux');
+
+  /* ---------- Hero 交互演示 ---------- */
+  const steps = $$('#steps .step'), prog = $('#prog'), result = $('#result'), runBtn = $('#runBtn');
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  let running = false;
+  async function runDemo(){
+    if (running) return; running = true;
+    runBtn.disabled = true; runBtn.style.opacity = .6;
+    result.classList.remove('show');
+    steps.forEach(s => { s.classList.remove('active','done'); $('.st', s).textContent = '等待'; });
+    prog.style.width = '0%';
+    const durations = [700, 1600, 900, 1200];
+    for (let i = 0; i < steps.length; i++){
+      const s = steps[i];
+      s.classList.add('active'); $('.st', s).textContent = '运行中';
+      prog.style.width = ((i + .5) / steps.length * 100) + '%';
+      await wait(durations[i]);
+      s.classList.remove('active'); s.classList.add('done'); $('.st', s).textContent = '完成 ✓';
+      prog.style.width = ((i + 1) / steps.length * 100) + '%';
+    }
+    const link = $('#demoLink').value.trim();
+    const name = link ? link.split('/').pop().split('?')[0] || 'file' : 'file';
+    result.querySelector('code').textContent = `Releases › down.part00 · down.part01 · down.part02  ← ${name}`;
+    result.classList.add('show');
+    running = false; runBtn.disabled = false; runBtn.style.opacity = 1;
+  }
+  runBtn.addEventListener('click', runDemo);
+  $('#demoLink').addEventListener('keydown', e => { if (e.key === 'Enter') runDemo(); });
+  // 首屏自动播放一次
+  setTimeout(runDemo, 900);
+})();
+</script>
+</body>
+</html>
