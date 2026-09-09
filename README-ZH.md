@@ -1,6 +1,6 @@
 # Action tools - Github Action 巧用小脚本
 
-[![License: GPL-3.0](https://img.shields.io/github/license/lingyicute/action-tools?color=blue)](./LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/github/license/lingyicute/action-tools?color=blue)](./LICENSE)
 ![Downloader](https://github.com/lingyicute/Action-tools/actions/workflows/downloader.yml/badge.svg)
 ![Payload Dump](https://github.com/lingyicute/Action-tools/actions/workflows/payload-dumper.yml/badge.svg)
 ![Tar.gz decompresser](https://github.com/lingyicute/Action-tools/actions/workflows/tar-gz-decompresser.yml/badge.svg)
@@ -110,4 +110,4 @@
 
 ## 许可证
 
-[GPL-3.0](./LICENSE) © [lingyicute](https://github.com/lingyicute) 2023-2026
+[AGPL-3.0](./LICENSE) © [lingyicute](https://github.com/lingyicute) 2023-2026
