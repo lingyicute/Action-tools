@@ -462,7 +462,7 @@ footer a{color:var(--primary);font-weight:500}
     <div class="section-head reveal">
       <span class="kicker">为什么需要它</span>
       <h2 class="headline-lg">同样是从境外拿文件，路径不同，速度天差地别</h2>
-      <p class="body-lg">跨境链路拥塞、丢包、限速，让直接下载海外服务器上的大文件变成一场煎熬。而 GitHub 的 Release 资源通过全球 CDN 分发，在大陆地区通常能保持稳定、可观的直连速度。把「跨境」这一段交给 GitHub 数据中心来完成，你只需要走最后一公里。</p>
+      <p class="body-lg">跨境链路拥塞、丢包、限速，让直接下载海外服务器上的大文件变成一场煎熬。而 GitHub 的 Release 资源通过全球 CDN 分发，在大陆地区通常能保持稳定、可观的直连速度。把「跨境」这一段交给 GitHub Runner 来完成，你只需要走最后一公里。</p>
     </div>
     <div class="compare">
       <article class="cmp-card bad reveal">
@@ -477,7 +477,7 @@ footer a{color:var(--primary);font-weight:500}
       </article>
       <article class="cmp-card good reveal">
         <h3 class="title-lg"><svg><use href="#i-cloud"/></svg>通过 Action Downloader</h3>
-        <p class="sub">GitHub 服务器 → 海外服务器（同在境外，飞快），再由 Release CDN → 你</p>
+        <p class="sub">GitHub Runner → 海外服务器（同在境外，飞快），再由 Release CDN → 你</p>
         <div class="route"><span class="node">Runner ⚡ 源站</span><span class="arrow">→</span><span class="node">Release CDN</span><span class="arrow">→</span><span class="node">本机</span></div>
         <div class="speed" data-speed>
           <div class="row"><span>典型速度</span><div class="track"><div class="fill" data-w="92"></div></div><span class="val">跑满带宽</span></div>
@@ -656,10 +656,10 @@ footer a{color:var(--primary);font-weight:500}
     <div class="faq-list">
       <details class="reveal">
         <summary><svg width="22" height="22" style="color:var(--primary)"><use href="#i-help"/></svg>为什么 Release 下载在大陆会比源站快？<span class="chev"><svg><use href="#i-expand"/></svg></span></summary>
-        <div class="body">GitHub Release 的附件由 GitHub 的对象存储与全球 CDN 分发，边缘节点覆盖广、链路质量好；而许多海外小站点、学术镜像、个人服务器只有单一节点，跨境访问时极易拥塞。Action Downloader 相当于把「跨境」这段由 GitHub 数据中心内部高速完成，你只需要从 CDN 拿结果。</div>
+        <div class="body">GitHub Release 的附件由 GitHub 的对象存储与全球 CDN 分发，边缘节点覆盖广、链路质量好；而许多海外小站点、学术镜像、个人服务器只有单一节点，跨境访问时极易拥塞。Action Downloader 相当于把「跨境」这段由 GitHub Runner 高速完成，你只需要从 CDN 拿结果。</div>
       </details>
       <details class="reveal">
-        <summary><svg width="22" height="22" style="color:var(--primary)"><use href="#i-help"/></svg>下载的文件为什么叫 <code style="margin:0 4px">down</code>，没有扩展名？<span class="chev"><svg><use href="#i-expand"/></svg></span></summary>
+        <summary><svg width="22" height="22" style="color:var(--primary)"><use href="#i-help"/></svg>下载的文件为什么叫 down，没有扩展名？<span class="chev"><svg><use href="#i-expand"/></svg></span></summary>
         <div class="body">workflow 使用 <code>wget -O downloads/down</code> 统一命名，以简化后续分卷与发布逻辑。Release 说明里会记录原始链接，下载后自行重命名（例如加回 <code>.iso</code>、<code>.zip</code>）即可。你也可以 Fork 后修改这一行来保留原始文件名。</div>
       </details>
       <details class="reveal">
