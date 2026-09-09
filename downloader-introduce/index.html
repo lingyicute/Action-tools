@@ -118,7 +118,7 @@ code,pre,kbd{font-family:var(--mono)}
 .headline-sm{font-size:1.5rem;line-height:1.35;font-weight:500}
 .title-lg{font-size:1.375rem;line-height:1.35;font-weight:500}
 .title-md{font-size:1rem;line-height:1.5;font-weight:600;letter-spacing:.01em}
-.body-lg{font-size:1.06rem;line-height:1.65;color:var(--on-surface-variant)}
+.body-lg{font-size:1.06rem;line-height:1.65}
 .body-md{font-size:.925rem;line-height:1.6;color:var(--on-surface-variant)}
 .label-lg{font-size:.875rem;font-weight:600;letter-spacing:.01em}
 .label-md{font-size:.75rem;font-weight:600;letter-spacing:.04em}
@@ -307,8 +307,8 @@ details .body{padding:0 22px 20px 22px;color:var(--on-surface-variant);font-size
 details .body code{background:var(--surface-container-high);padding:1px 6px;border-radius:4px;font-size:.82rem}
 
 /* CTA */
-.cta{padding:32px 0 80px}
-.cta-card{background:var(--primary);color:var(--on-primary);border-radius:var(--r-xl);padding:56px 40px;text-align:center;position:relative;overflow:hidden}
+.cta{padding:100px 0 100px}
+.cta-card{background:var(--primary);color:var(--on-primary);border-radius:var(--r-xl);padding:110px 40px;text-align:center;position:relative;overflow:hidden}
 .cta-card::before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;background:var(--inverse-primary);opacity:.35;filter:blur(60px);right:-140px;top:-160px}
 .cta-card::after{content:"";position:absolute;width:320px;height:320px;border-radius:50%;background:var(--tertiary-container);opacity:.35;filter:blur(60px);left:-100px;bottom:-160px}
 .cta-card > *{position:relative}
@@ -356,7 +356,6 @@ footer a{color:var(--primary);font-weight:500}
   <symbol id="i-cut" viewBox="0 0 24 24"><path fill="currentColor" d="M9.6 12 6.8 9.2q-.35.15-.65.225T5.5 9.5q-1.45 0-2.475-1.025T2 6q0-1.45 1.025-2.475T5.5 2.5q1.45 0 2.475 1.025T9 6q0 .35-.075.65T8.7 7.3l2.8 2.8 8.5-8.5H23L13.4 11.1l1.6 1.6v.05l-1.4 1.4-2-2-1.4 1.4 2.35 2.35q.1.3.175.6t.075.6q0 1.45-1.025 2.475T9.3 21.6q-1.45 0-2.475-1.025T5.8 18.1q0-1.45 1.025-2.475T9.3 14.6q.35 0 .65.05t.6.15l1.45-1.45L9.6 12ZM5.5 7.5q.65 0 1.075-.425T7 6q0-.65-.425-1.075T5.5 4.5q-.65 0-1.075.425T4 6q0 .65.425 1.075T5.5 7.5Zm3.8 12.1q.65 0 1.075-.425T10.8 18.1q0-.65-.425-1.075T9.3 16.6q-.65 0-1.075.425T7.8 18.1q0 .65.425 1.075T9.3 19.6Z"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4 9.55 18Z"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20q-3.35 0-5.675-2.325T4 12q0-3.35 2.325-5.675T12 4q1.725 0 3.3.712T18 6.75V4h2v7h-7V9h4.2q-.8-1.4-2.187-2.2T12 6Q9.5 6 7.75 7.75T6 12q0 2.5 1.75 4.25T12 18q1.925 0 3.475-1.1T17.65 14h2.1q-.7 2.65-2.85 4.325T12 20Z"/></symbol>
-  <symbol id="i-rocket" viewBox="0 0 24 24"><path fill="currentColor" d="M6 21v-3.1L2 14l1.4-1.4 2.6 2.6V14q0-4.4 2.85-7.925T16 1.9q.85 3.2.2 6.375t-2.35 5.85L12 16v5H6Zm6-13q0 .825.588 1.413T14 10q.825 0 1.413-.587T16 8q0-.825-.587-1.412T14 6q-.825 0-1.412.588T12 8Z"/></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><path fill="currentColor" d="m21.4 11.6-9-9Q12.1 2.3 11.7 2.15T10.9 2H4q-.8 0-1.4.6T2 4v6.9q0 .4.15.8t.45.7l9 9q.6.6 1.4.6t1.4-.6l7-7q.6-.6.6-1.4t-.6-1.4ZM6.5 8q-.625 0-1.062-.437T5 6.5q0-.625.438-1.062T6.5 5q.625 0 1.063.438T8 6.5q0 .625-.437 1.063T6.5 8Z"/></symbol>
   <symbol id="i-archive" viewBox="0 0 24 24"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V6.5q0-.375.125-.7T3.5 5.2L4.9 3.5q.2-.25.45-.375T5.9 3h12.2q.3 0 .55.125t.45.375l1.4 1.7q.25.275.375.6T21 6.5V19q0 .825-.587 1.413T19 21H5Zm.4-15h13.2l-.85-1H6.25L5.4 6ZM12 18l4-4-1.4-1.4-1.6 1.6V10h-2v4.2l-1.6-1.6L8 14l4 4Z"/></symbol>
   <symbol id="i-fork" viewBox="0 0 24 24"><path fill="currentColor" d="M12 23q-1.25 0-2.125-.875T9 20q0-.975.55-1.737T11 17.2v-2.55L6 11.85V6.8q-.9-.35-1.45-1.1T4 4q0-1.25.875-2.125T7 1q1.25 0 2.125.875T10 4q0 .95-.55 1.7T8 6.8v3.9l4 2.05 4-2.05V6.8q-.9-.35-1.45-1.1T14 4q0-1.25.875-2.125T17 1q1.25 0 2.125.875T20 4q0 .95-.55 1.7T18 6.8v5.05l-5 2.8v2.55q.9.3 1.45 1.062T15 20q0 1.25-.875 2.125T12 23Z"/></symbol>
@@ -467,7 +466,7 @@ footer a{color:var(--primary);font-weight:500}
         </div>
       </article>
       <article class="cmp-card good reveal">
-        <h3 class="title-lg"><svg><use href="#i-rocket"/></svg>通过 Action Downloader</h3>
+        <h3 class="title-lg"><svg><use href="#i-cloud"/></svg>通过 Action Downloader</h3>
         <p class="sub">GitHub 服务器 → 海外服务器（同在境外，飞快），再由 Release CDN → 你</p>
         <div class="route"><span class="node">Runner ⚡ 源站</span><span class="arrow">→</span><span class="node">Release CDN</span><span class="arrow">→</span><span class="node">本机</span></div>
         <div class="speed" data-speed>
@@ -667,7 +666,7 @@ footer a{color:var(--primary);font-weight:500}
       </details>
       <details class="reveal">
         <summary><svg width="22" height="22" style="color:var(--primary)"><use href="#i-help"/></svg>私有仓库可以用吗？<span class="chev"><svg><use href="#i-expand"/></svg></span></summary>
-        <div class="body">可以，但私有仓库的 Actions 分钟数和存储空间有配额限制，且 Release 附件需要登录才能下载。如果内容不敏感，建议使用公开仓库。</div>
+        <div class="body">也是可以的，但私有仓库的 Actions 分钟数和存储空间有配额限制，且 Release 附件需要登录才能下载。如果内容不敏感，建议使用公开仓库。</div>
       </details>
     </div>
   </div>
