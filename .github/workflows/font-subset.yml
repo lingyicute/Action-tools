@@ -1,0 +1,67 @@
+name: Font Subsetting & Embed
+on:
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "downloader-introduce/index.html"
+      - "scripts/subset_font.py"
+      - "scripts/verify_font_subset.py"
+      - ".github/workflows/font-subset.yml"
+  pull_request:
+    paths:
+      - "downloader-introduce/index.html"
+      - "scripts/subset_font.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: font-subset-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  subset-and-embed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fonttools brotli
+
+      # On a PR we only report whether the page is stale, never commit.
+      - name: Check subset is up to date (pull requests)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: python scripts/subset_font.py --html downloader-introduce/index.html --check
+
+      - name: Download Nebulove & Subset Font
+        if: github.event_name != 'pull_request'
+        run: python scripts/subset_font.py --html downloader-introduce/index.html
+
+      - name: Verify subset covers the page
+        if: github.event_name != 'pull_request'
+        run: python scripts/verify_font_subset.py --html downloader-introduce/index.html
+
+      - name: Commit and push changes as user
+        if: github.event_name != 'pull_request'
+        run: |
+          if git diff --quiet downloader-introduce/index.html; then
+            echo "No changes in downloader-introduce/index.html detected."
+          else
+            git config user.name "${{ github.actor }}"
+            git config user.email "${{ github.event.pusher.email || format('{0}@users.noreply.github.com', github.actor) }}"
+            git add downloader-introduce/index.html
+            git commit -m "perf: 更新 downloader-introduce 字体子集"
+            git push
+          fi
