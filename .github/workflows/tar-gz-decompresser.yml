@@ -47,50 +47,30 @@ jobs:
         cd "$WORK_DIR"
         rm -f a.tar.gz
 
-        # 目标：把子目录里的文件全部搬到顶层，且一个都不丢。
-        # 旧写法 `find a/ -mindepth 2 -type f -exec mv {} a/ \;` + `rm -rf` 有三个问题：
-        #   1) 同名文件互相覆盖，顶层文件会被子目录里的同名文件抢掉，且毫无告警；
-        #   2) 只匹配 -type f，软链接搬不走，随后连同所在目录被 rm -rf 删掉；
-        #   3) 留在顶层的非普通文件（悬空软链接、FIFO、指向目录的软链接）会被
-        #      原样送去发布 —— 实测 `gh release create a/*` 碰到它们要么报 ENOENT/EISDIR
-        #      直接失败，要么在 open() 上永久阻塞（FIFO 没有写端），把 job 拖到 6 小时超时。
-        # 清单先落盘再逐条处理：边遍历目录边把文件搬走会踩 readdir 竞态，
-        # POSIX 允许 readdir 漏掉尚未读到的条目，那些条目会被后面的 rm -rf 吃掉。
+        # 1) 软链接一律删除，不做实体化：软链接无法可靠地作为 Release 资产
+        #    （悬空的会 ENOENT、指向目录的会 EISDIR），而且目标若在本归档内，
+        #    其内容已经作为普通文件保留，删链接不会丢数据。
+        find . -type l -print -delete | sed 's/^/移除软链接: /'
+        #    剩下的非普通文件（FIFO/socket/设备）同样无法发布，一并丢弃，
+        #    否则 `gh release create a/*` 会在 open() 上永久阻塞（FIFO 无写端）。
+        find . -mindepth 1 ! -type d ! -type f -print -delete | sed 's/^/丢弃非普通文件: /'
+
+        # 2) 把子目录里的普通文件全部搬到顶层，一个都不丢。清单先落盘再逐条处理：
+        #    边遍历目录边把文件搬走会踩 readdir 竞态，POSIX 允许 readdir 漏掉
+        #    尚未读到的条目，那些条目会被后面的 rm -rf 吃掉。
         list_file=$(mktemp)
         trap 'rm -f "$list_file"' EXIT
-        find . -mindepth 1 ! -type d -print0 > "$list_file"
+        find . -mindepth 1 -type f -print0 > "$list_file"
 
         moved=0
         renamed=0
-        dropped=0
         while IFS= read -r -d '' f; do
           name=${f##*/}          #  basename
-          rel=${f#./}           # 相对 a/ 的路径，只用于打日志
-          deep=0
-          case $rel in */*) deep=1 ;; esac
-
-          if [ -L "$f" ]; then
-            if [ ! -e "$f" ]; then
-              # 目标在归档内被搬走时也算悬空；其内容已作为普通文件保留，不算丢数据
-              echo "::warning::丢弃悬空软链接 $rel（gh 上传时会 ENOENT；目标若在本归档内，已作为普通文件保留）"
-              rm -f -- "$f"; dropped=$((dropped + 1)); continue
-            elif [ -d "$f" ]; then
-              echo "::warning::丢弃指向目录的软链接 $rel（gh 上传时会 EISDIR）"
-              rm -f -- "$f"; dropped=$((dropped + 1)); continue
-            fi
-          elif [ ! -f "$f" ]; then
-            echo "::warning::丢弃非普通文件 $rel（FIFO/socket/设备文件无法作为 Release 资产）"
-            rm -f -- "$f"; dropped=$((dropped + 1)); continue
-          fi
-
-          # 顶层的普通文件原地不动；顶层软链接就地实体化，避免留下相对路径失效的链接
-          if [ "$deep" = 0 ]; then
-            if [ -L "$f" ]; then
-              cp -L --remove-destination -- "$f" "$f"
-              echo "顶层软链接 $name 已实体化"
-            fi
-            continue
-          fi
+          rel=${f#./}            # 相对 a/ 的路径，只用于打日志
+          case $rel in
+            */*) ;;              # 子目录里的文件需要搬运
+            *)   continue ;;     # 顶层文件原地不动
+          esac
 
           # 重名时自动改名：foo.txt -> foo.1.txt -> foo.2.txt，绝不覆盖。
           # `.gitignore` 这类点文件的前导点不是扩展名分隔符，要跳过。
@@ -105,7 +85,7 @@ jobs:
               ;;
           esac
           i=1
-          while [ -e "$dest" ] || [ -L "$dest" ]; do
+          while [ -e "$dest" ]; do
             dest="${stem}.${i}${ext}"
             i=$((i + 1))
           done
@@ -114,26 +94,20 @@ jobs:
             echo "重名冲突：$rel 已另存为 $dest"
           fi
 
-          if [ -L "$f" ]; then
-            cp -L --remove-destination -- "$f" "$dest"   # 软链接实体化后搬运
-            rm -f -- "$f"
-          else
-            mv -- "$f" "$dest"
-          fi
+          mv -- "$f" "$dest"
           moved=$((moved + 1))
         done < "$list_file"
 
-        # 收尾校验：子目录里不能再有任何条目，顶层也只能剩普通文件，
-        # 两条都满足才敢 rm -rf；否则宁可报错，也不要静默把文件删掉。
-        leftover=$(find . -mindepth 2 ! -type d -print
-                    find . -mindepth 1 -maxdepth 1 ! -type f ! -type d -print)
+        # 收尾校验：子目录里不能再有任何条目，才敢 rm -rf；否则宁可报错，
+        # 也不要静默把文件删掉。
+        leftover=$(find . -mindepth 2 ! -type d -print)
         if [ -n "$leftover" ]; then
           echo "::error::仍有条目未能处理完，已中止（避免被 rm -rf 删除）："
           printf '%s\n' "$leftover"
           exit 1
         fi
         find . -mindepth 1 -type d -exec rm -rf {} +
-        echo "扁平化完成：搬运 $moved 个文件（其中 $renamed 个因重名改名），丢弃 $dropped 个不支持的条目。"
+        echo "扁平化完成：搬运 $moved 个文件（其中 $renamed 个因重名改名）。"
 
     - name: Tree after process
       run: tree -ash "$GITHUB_WORKSPACE/$WORK_DIR"
