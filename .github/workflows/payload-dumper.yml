@@ -9,7 +9,7 @@ on:
       PART:
         description: 'The name of the partition you want to extract'
         required: true
-      
+
 permissions:
   contents: read
 
@@ -18,22 +18,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
         python-version: "3.10"
-        
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install git+https://github.com/5ec1cff/payload-dumper
-        
+
     - name: Run
+      # 用环境变量传参并加引号：旧写法 `--partitions \${{ ... }}` 的反斜杠只是
+      # 碰巧被 shell 吃掉，输入里一旦出现空格或引号，参数就会被拆断或被当作命令执行。
+      # 另外 --partitions 收的是「逗号分隔、不含空格」的列表（见上游 argparse），
+      # 所以顺手把 PART 里的空白清掉，让 "boot, vendor" 这种写法也能命中分区。
+      env:
+        PART: ${{ github.event.inputs.PART }}
+        LINK: ${{ github.event.inputs.LINK }}
       run: |
-        payload_dumper --partitions \${{ github.event.inputs.PART }} \${{ github.event.inputs.LINK }}
-        
-    - name: Upload Aritfact (universal)
+        set -euo pipefail
+        PART_CLEAN=$(printf '%s' "$PART" | tr -d '[:space:]')
+        if [ -z "$PART_CLEAN" ]; then
+          echo "::error::PART 是空的，请至少填写一个分区名（例如 boot）"
+          exit 1
+        fi
+        payload_dumper --partitions "$PART_CLEAN" "$LINK"
+
+    - name: Upload Artifact (universal)
       uses: actions/upload-artifact@v4
       with:
         name: imgs
         path: ${{ github.workspace }}/output/*
+        # 一个分区都没导出（分区名写错、payload 不含该分区）时，
+        # 默认只会 warn，job 仍然显示成功；这里改成 error，避免「成功但其实没产物」。
+        if-no-files-found: error

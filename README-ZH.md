@@ -77,7 +77,7 @@
 
 ### 🗜️ Tar.gz Decompresser 解压
 
-下载 `.tar.gz` 压缩包并解压，**拍平目录结构**（所有文件移动到同一层目录），然后发布到名为 `targz-d-<run_number>` 的 Release。
+下载 `.tar.gz` 压缩包并解压，**拍平目录结构**（所有文件移动到同一层目录；遇到同名文件会改名为 `foo.1.ext`，不会互相覆盖），然后发布到名为 `targz-d-<run_number>` 的 Release。
 
 | 输入 | 说明 | 必填 |
 | --- | --- | --- |

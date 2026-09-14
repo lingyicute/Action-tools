@@ -7,10 +7,13 @@ on:
       - "scripts/subset_font.py"
       - "scripts/verify_font_subset.py"
       - ".github/workflows/font-subset.yml"
+  # 与 push 的过滤条件保持一致，否则改了校验脚本或本文件的 PR 不会触发检查。
   pull_request:
     paths:
       - "downloader-introduce/index.html"
       - "scripts/subset_font.py"
+      - "scripts/verify_font_subset.py"
+      - ".github/workflows/font-subset.yml"
   workflow_dispatch:
 
 permissions:
@@ -42,8 +45,22 @@ jobs:
       # On a PR we only report whether the page is stale, never commit.
       - name: Check subset is up to date (pull requests)
         if: github.event_name == 'pull_request'
-        continue-on-error: true
-        run: python scripts/subset_font.py --html downloader-introduce/index.html --check
+        # 之前这里是 continue-on-error: true —— 检查失败被完全吞掉，
+        # 既不会让 PR 变红，也不会在界面上留下任何提示，等于没有这个步骤。
+        run: |
+          set -uo pipefail
+          rc=0
+          python scripts/subset_font.py --html downloader-introduce/index.html --check || rc=$?
+          case "$rc" in
+            0) echo "字体子集是最新的。" ;;
+            2) # 过期只提示、不卡 PR（本工作流只在 push 到默认分支时才提交）
+               msg="downloader-introduce/index.html 里内嵌的字体子集已过期：请在 main 分支手动运行一次 Font Subsetting & Embed 工作流后再合并。"
+               echo "::warning::$msg"
+               echo "$msg" >> "$GITHUB_STEP_SUMMARY" ;;
+            *) # 下载失败 / 依赖缺失等，是真错误，必须让 PR 变红
+               echo "::error::字体子集检查没能完成（exit $rc），见上方日志。"
+               exit "$rc" ;;
+          esac
 
       - name: Download Nebulove & Subset Font
         if: github.event_name != 'pull_request'
@@ -62,6 +79,8 @@ jobs:
             git config user.name "${{ github.actor }}"
             git config user.email "${{ github.event.pusher.email || format('{0}@users.noreply.github.com', github.actor) }}"
             git add downloader-introduce/index.html
-            git commit -m "perf: 更新 downloader-introduce 字体子集"
+            # [skip ci]：本工作流的 push 触发条件包含 index.html，
+            # 不加的话机器人自己的提交会再触发一次同样的运行（白跑一轮 Actions）。
+            git commit -m "perf: 更新 downloader-introduce 字体子集 [skip ci]"
             git push
           fi

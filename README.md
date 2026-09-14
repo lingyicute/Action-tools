@@ -77,7 +77,7 @@ Extracted `.img` files are uploaded as Artifact **`imgs`**.
 
 ### 🗜️ Tar.gz Decompresser
 
-Downloads a `.tar.gz` archive, extracts it, **flattens the directory structure** (all files are moved into a single directory), and publishes the files to a Release named `targz-d-<run_number>`.
+Downloads a `.tar.gz` archive, extracts it, **flattens the directory structure** (all files are moved into a single directory; same-named files are renamed to `foo.1.ext` rather than overwriting each other), and publishes the files to a Release named `targz-d-<run_number>`.
 
 | Input | Description | Required |
 | --- | --- | --- |

@@ -125,9 +125,16 @@ def replace_font_face(document: str, font_face_css: str) -> tuple[str, str]:
     for match in FONT_FACE_RE.finditer(document):
         block = match.group(0)
         if FONT_FAMILY.lower() in block.lower():
-            indent = re.search(r"[ \t]*(?=@font-face)", document[: match.start()]) or re.match(r"", "")
-            indent = (indent.group(0).splitlines() or [""])[-1]
-            new_document = document[: match.start()] + font_face_css + document[match.end() :]
+            # 保留原有缩进。旧实现在这里算出了 indent 却又没有用到，生成的 CSS 永远从
+            # 第 0 列开始，会把缩进过的页面无声地改成顶格。注意 match 是从 `@font-face`
+            # 本身开始的，首行的缩进还留在 document[:start] 里，所以只能补后续行。
+            line_start = document.rfind("\n", 0, match.start()) + 1
+            pad = re.match(r"[ \t]*", document[line_start : match.start()]).group(0)
+            css = font_face_css
+            if pad:
+                lines = font_face_css.splitlines()
+                css = "\n".join([lines[0]] + [pad + line if line else line for line in lines[1:]])
+            new_document = document[: match.start()] + css + document[match.end() :]
             return new_document, ("unchanged" if new_document == document else "replaced")
 
     # no Nebulove rule yet: inject one at the end of <head>
@@ -156,7 +163,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="additional characters to keep (e.g. text typed at runtime); "
         "the page can also declare them via <!-- subset:extra ... -->",
     )
-    parser.add_argument("--check", action="store_true", help="exit 1 if the page is out of date; write nothing")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="write nothing; exit 2 if the page is out of date, exit 1 on any error",
+    )
     parser.add_argument("--quiet", action="store_true", help="only report errors")
     return parser.parse_args(argv)
 
@@ -177,7 +188,11 @@ def main(argv: list[str] | None = None) -> int:
     chars = collect_chars(document, args.extra_chars)
     log(f"Total unique characters needed: {len(chars)}")
 
-    font_bytes = download_font(args.font_url)
+    try:
+        font_bytes = download_font(args.font_url)
+    except (OSError, RuntimeError) as exc:  # 网络失败 / 限流 / 下载被截断
+        print(f"Error: could not fetch the source font ({exc}).", file=sys.stderr)
+        return 1
     log(f"Source font: {len(font_bytes):,} bytes")
 
     try:
@@ -197,8 +212,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.check:
-        print(f"Error: {html_path} is out of date (subset would be {action}).", file=sys.stderr)
-        return 1
+        # 2 = 「仅仅是过期」，1 = 真的出错了。两者混在一个退出码里，CI 就没法
+        # 只对前者降级成 warning、对后者报错。
+        print(f"Out of date: {html_path} (subset would be {action}).", file=sys.stderr)
+        return 2
 
     html_path.write_text(new_document, encoding="utf-8")
     log(f"{html_path} updated successfully! (@font-face {action}, {len(new_document):,} bytes)")

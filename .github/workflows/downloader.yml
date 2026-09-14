@@ -6,62 +6,102 @@ on:
       LINK:
         description: 'The file link'
         required: true
-      
+
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
+    env:
+      DOWNLOAD_DIR: downloads
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up dependencies
-      run: sudo apt-get install wget tree coreutils -y
-      
+      run: sudo apt-get update && sudo apt-get install -y wget tree coreutils
+
     - name: Create download directory
-      run: mkdir -p downloads
-      
+      run: mkdir -p "$DOWNLOAD_DIR"
+
     - name: Wget
-      # 将文件下载到 downloads 文件夹内
-      run: wget -O downloads/down '${{ github.event.inputs.LINK }}'
-      
+      # 将文件下载到 downloads 文件夹内。
+      # LINK 走环境变量而不是直接拼进 shell 代码，否则链接里的引号/分号会被当作命令执行。
+      env:
+        LINK: ${{ github.event.inputs.LINK }}
+      run: wget -O "$DOWNLOAD_DIR/down" "$LINK"
+
     - name: Check size and split if >= 2GiB
       run: |
-        cd downloads
+        set -euo pipefail
+        cd "$DOWNLOAD_DIR"
         # 获取文件大小 (字节)
         FILE_SIZE=$(stat -c%s "down")
+        # wget -O 即使拿到 4xx/5xx 也会把文件建出来，空文件会让 Release 里出现 0 字节资产
+        if [ "$FILE_SIZE" -eq 0 ]; then
+          echo "::error::下载到的内容为空（0 字节），链接很可能不是直链或需要 Cookie/登录"
+          exit 1
+        fi
         # 2GiB 对应的字节数
         LIMIT=$((2 * 1024 * 1024 * 1024))
-        
+
         if [ "$FILE_SIZE" -ge "$LIMIT" ]; then
           echo "文件大小为 $FILE_SIZE 字节，大于等于 2GiB，开始分割..."
           split -b 2046M -d down down.part
-          rm down 
+          rm down
           echo "分割完成！"
         else
           echo "文件大小为 $FILE_SIZE 字节，小于 2GiB，无需分割。"
         fi
 
     - name: Tree
-      run: tree -ash ${{ github.workspace }}/downloads
-      
+      run: tree -ash "$GITHUB_WORKSPACE/$DOWNLOAD_DIR"
+
     - name: Create Release and Upload Assets
       env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINK: ${{ github.event.inputs.LINK }}
+          TAG: downloader-${{ github.run_number }}
+          RUN_NUMBER: ${{ github.run_number }}
       run: |
-          cd downloads
-          gh release create "downloader-${{ github.run_number }}" * \
-            --title "Downloader 下载成功: 第 ${{ github.run_number }} 个文件" \
-            --notes-file - << 'EOF'
-          Downloader 下载的文件：${{ github.event.inputs.LINK }}
-          > [!Tip]
-          > 
-          > 如果文件被分割，请下载所有 `.part` 文件后在本地使用 `cat down.part* > down` (Linux/macOS) 或 `copy /b down.part* down` (Windows) 进行合并。
-          EOF
+        set -euo pipefail
+        cd "$DOWNLOAD_DIR"
+
+        # 兜底：目录空了（例如上一步被跳过）时，`*` 会原样传给 gh 并报一个看不懂的路径错误
+        shopt -s nullglob dotglob
+        files=(*)
+        if [ "${#files[@]}" -eq 0 ]; then
+          echo "::error::downloads/ 是空的，没有任何文件可以发布（请检查 LINK 是否为直链）"
+          exit 1
+        fi
+
+        # 说明文件写到 downloads/ 之外，否则会被上面的 * 当成资产一起传到 Release 里
+        {
+          printf 'Downloader 下载的文件：%s\n\n' "$LINK"
+          printf '> [!Tip]\n'
+          printf '> \n'
+          # 反引号在单引号里保持字面量，正是这里要的（Markdown 行内代码）
+          # shellcheck disable=SC2016
+          printf '> 如果文件被分割，请下载所有 `.part` 文件后在本地使用 `cat down.part* > down` (Linux/macOS) 或 `copy /b down.part* down` (Windows) 进行合并。\n'
+        } > "$GITHUB_WORKSPACE/release-notes.md"
+
+        # 重跑（Re-run jobs）时 run_number 不变，Release 已存在会让 gh 直接报错退出，
+        # 导致「失败之后永远无法重跑成功」；先删掉旧的再建。
+        if gh release view "$TAG" > /dev/null 2>&1; then
+          echo "Release $TAG 已存在（重跑场景），先删除再重新创建。"
+          gh release delete "$TAG" --cleanup-tag --yes
+        fi
+
+        gh release create "$TAG" "${files[@]}" \
+          --title "Downloader 下载成功: 第 $RUN_NUMBER 个文件" \
+          --notes-file "$GITHUB_WORKSPACE/release-notes.md"
 
     - name: Upload Artifact (universal)
+      # README 里把 Artifact 定位成「备份」，那就必须在 Release 失败时也要上传，
+      # 否则最需要备份的那次运行恰好拿不到文件。
+      if: always() && !cancelled()
       uses: actions/upload-artifact@v4
       with:
         name: Downloaded-File

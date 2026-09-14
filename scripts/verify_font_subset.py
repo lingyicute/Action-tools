@@ -63,15 +63,21 @@ def main() -> int:
     except Exception as exc:  # offline / rate-limited: degrade to a weaker check
         print(f"Warning: source font unavailable ({exc}); checking subset only.", file=sys.stderr)
 
+    if not subset_cmap:
+        print("Error: the inline subset has no character map at all — it cannot render the page.", file=sys.stderr)
+        return 1
+
     missing = sorted(c for c in required if ord(c) not in subset_cmap and ord(c) in source_cmap)
     if missing:
         print(f"Error: subset is missing {len(missing)} character(s): {''.join(missing[:40])}", file=sys.stderr)
         return 1
 
     fallback = sorted(c for c in required if ord(c) not in subset_cmap)
-    checked = len(required) - len(fallback) if source_cmap else len(required)
+    # 没拿到源字体时同样只能统计「子集真正覆盖了多少」，
+    # 否则离线降级路径会宣称覆盖了全部字符，把缺字也一并算成 OK。
+    checked = len(required) - len(fallback)
     print(
-        f"OK: inline subset {len(raw):,} bytes covers all {checked} characters "
+        f"OK: inline subset {len(raw):,} bytes covers {checked} of {len(required)} characters "
         f"used by {html_path} ({len(subset_cmap)} mapped codepoints)."
     )
     if fallback:

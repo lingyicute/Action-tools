@@ -452,7 +452,7 @@ footer a{color:var(--primary);font-weight:500}
       </div>
       <div class="demo-result" id="result">
         <svg><use href="#i-tag"/></svg>
-        <div><strong>downloader-42</strong> 已发布 · Downloader 下载成功: 第 1 个文件<br><code>Releases › down.part00 · down.part01 · down.part02</code></div>
+        <div><strong>downloader-42</strong> 已发布 · Downloader 下载成功: 第 42 个文件<br><code>Releases › down.part00 · down.part01 · down.part02</code></div>
       </div>
     </div>
   </div>
@@ -736,8 +736,12 @@ footer a{color:var(--primary);font-weight:500}
     themeIcon.setAttribute('href', t === 'dark' ? '#i-light' : '#i-dark');
     localStorage.setItem('ad-theme', t);
   }
+  // Only accept values this page itself wrote: localStorage is shared per-origin,
+  // and a foreign "ad-theme" would set a data-theme matching neither rule.
   const savedTheme = localStorage.getItem('ad-theme');
-  applyTheme(savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+  applyTheme(savedTheme === 'dark' || savedTheme === 'light'
+    ? savedTheme
+    : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
   $('#themeBtn').addEventListener('click', () => applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
 
   /* ---------- 主题：动态取色 (seed hue) ---------- */
@@ -747,8 +751,10 @@ footer a{color:var(--primary);font-weight:500}
     $$('.sw').forEach(b => b.classList.toggle('on', b.dataset.hue == h));
     localStorage.setItem('ad-hue', h);
   }
+  // Same for the hue: it is fed straight into oklch(), so a foreign value would
+  // poison --hue. Only digits are accepted here.
   const savedHue = localStorage.getItem('ad-hue');
-  if (savedHue) applyHue(savedHue);
+  if (savedHue && /^\d+(\.\d+)?$/.test(savedHue.trim())) applyHue(savedHue.trim());
   $('#paletteBtn').addEventListener('click', e => { e.stopPropagation(); swatches.classList.toggle('open'); });
   swatches.addEventListener('click', e => { const b = e.target.closest('.sw'); if (b) applyHue(b.dataset.hue); });
   document.addEventListener('click', e => { if (!e.target.closest('.palette')) swatches.classList.remove('open'); });
@@ -813,6 +819,24 @@ footer a{color:var(--primary);font-weight:500}
   /* ---------- Hero 交互演示 ---------- */
   const steps = $$('#steps .step'), prog = $('#prog'), result = $('#result'), runBtn = $('#runBtn');
   const wait = ms => new Promise(r => setTimeout(r, ms));
+  /* Derive the file name from the link. The old
+       link.split('/').pop().split('?')[0]
+     split on '/' first and stripped the query only afterwards, so a fragment
+     survived (.../a.iso#dl), a trailing slash collapsed to "file", and
+     percent-escapes stayed encoded. Parse it as a URL and take the last
+     path segment instead. */
+  function fileNameFrom(link){
+    if (!link) return 'file';
+    let raw = '';
+    try {
+      const u = new URL(link, location.href);
+      raw = u.pathname.split('/').filter(Boolean).pop() || u.hostname;
+    } catch {
+      raw = link.split(/[?#]/)[0].split('/').filter(Boolean).pop() || link;
+    }
+    try { raw = decodeURIComponent(raw); } catch { /* malformed escape: keep as-is */ }
+    return raw || 'file';
+  }
   let running = false;
   async function runDemo(){
     if (running) return; running = true;
@@ -825,20 +849,21 @@ footer a{color:var(--primary);font-weight:500}
       const s = steps[i];
       s.classList.add('active'); $('.st', s).textContent = '运行中';
       prog.style.width = ((i + .5) / steps.length * 100) + '%';
-      await wait(durations[i]);
+      await wait(durations[i] ?? 900);
       s.classList.remove('active'); s.classList.add('done'); $('.st', s).textContent = '完成 ✓';
       prog.style.width = ((i + 1) / steps.length * 100) + '%';
     }
     const link = $('#demoLink').value.trim();
-    const name = link ? link.split('/').pop().split('?')[0] || 'file' : 'file';
-    result.querySelector('code').textContent = `Releases › down.part00 · down.part01 · down.part02  ← ${name}`;
+    result.querySelector('code').textContent = `Releases › down.part00 · down.part01 · down.part02  ← ${fileNameFrom(link)}`;
     result.classList.add('show');
     running = false; runBtn.disabled = false; runBtn.style.opacity = 1;
   }
   runBtn.addEventListener('click', runDemo);
   $('#demoLink').addEventListener('keydown', e => { if (e.key === 'Enter') runDemo(); });
-  // 首屏自动播放一次
-  setTimeout(runDemo, 900);
+  // 首屏自动播放一次 - skipped when the OS asks for reduced motion: the page CSS
+  // turns animations off for those users, but this JS is not covered by that rule
+  // and would still step through the four states.
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) setTimeout(runDemo, 900);
 })();
 </script>
 </body>

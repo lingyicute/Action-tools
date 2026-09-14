@@ -2,27 +2,26 @@ name: System Test
 
 on:
   workflow_dispatch:
-      
+
 jobs:
   process:
     runs-on: ubuntu-latest
 
     steps:
     - name: Set up dependencies
-      run: sudo apt-get install neofetch tree
+      # apt 的包索引在新开的 runner 上可能是旧的，先 update 再 install，
+      # 避免 "Unable to locate package" 直接把整个 workflow 打挂。
+      run: sudo apt-get update && sudo apt-get install -y neofetch tree
 
     - name: lscpu
       run: sudo lscpu
-      
+
     - name: tree
       run: sudo tree -ash -L 2 /home
 
-    - name: tree (more)
-      run: sudo tree -ash -L 2 /home
-      
     - name: whoami
       run: whoami
-      
+
     - name: id
       run: id
 
@@ -34,6 +33,6 @@ jobs:
 
     - name: df
       run: sudo df -h
-      
+
     - name: neofetch
       run: sudo neofetch

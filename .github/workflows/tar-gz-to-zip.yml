@@ -6,58 +6,83 @@ on:
       LINK:
         description: 'The file link (.tar.gz)'
         required: true
-      
+
 jobs:
   process:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      
+
+    env:
+      WORK_DIR: a
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Create working directory
-      run: mkdir a
-      
+      run: mkdir "$WORK_DIR"
+
     - name: Set up dependencies
       run: sudo apt-get update && sudo apt-get install -y wget tree tar gzip zip
-      
+
     - name: Download file
-      run: wget -O a/a.tar.gz '${{ github.event.inputs.LINK }}'
-      
+      # LINK 通过环境变量传入：直接拼进 shell 代码时，链接里的单引号会截断字符串并执行任意命令
+      env:
+        LINK: ${{ github.event.inputs.LINK }}
+      run: wget -O "$WORK_DIR/a.tar.gz" "$LINK"
+
     - name: Tree after download
-      run: tree -ash "${{ github.workspace }}/a"
-      
+      run: tree -ash "$GITHUB_WORKSPACE/$WORK_DIR"
+
     - name: Extract archive
-      run: cd a && tar -zxvf a.tar.gz
-      
+      run: tar -zxvf "$WORK_DIR/a.tar.gz" -C "$WORK_DIR"
+
     - name: Tree after extraction
-      run: tree -ash "${{ github.workspace }}/a"
-      
+      run: tree -ash "$GITHUB_WORKSPACE/$WORK_DIR"
+
     - name: Process files (Remove symlinks)
       run: |
-        # 1. 删除原始压缩包
-        rm -f a/a.tar.gz
-        
+        set -euo pipefail
+        # 1. 删除原始压缩包（否则会被一起打进 repacked.zip，体积直接翻倍）
+        rm -f "$WORK_DIR/a.tar.gz"
+
         # 2. 查找并删除所有符号链接 (symlinks)
-        find a/ -type l -delete
+        find "$WORK_DIR/" -type l -print -delete | sed 's/^/移除软链接: /'
 
     - name: Tree after removing symlinks
-      run: tree -ash "${{ github.workspace }}/a"
-        
+      run: tree -ash "$GITHUB_WORKSPACE/$WORK_DIR"
+
     - name: Repack to ZIP
       run: |
-        cd a
+        set -euo pipefail
+        # 空归档时 zip 会以 12 退出并抛出让人摸不着头脑的 "zip error: Nothing to do!"，
+        # 这里先给出明确原因。
+        if [ -z "$(find "$WORK_DIR" -mindepth 1 -print -quit)" ]; then
+          echo "::error::$WORK_DIR/ 是空的：这个 .tar.gz 里没有可打包的内容"
+          exit 1
+        fi
+        rm -f repacked.zip
+        cd "$WORK_DIR"
         # 将 a 目录下的所有文件静默(-q)递归(-r)打包到上一层目录的 repacked.zip 中
         zip -q -r ../repacked.zip .
 
     - name: Create Release and Upload Assets
       env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINK: ${{ github.event.inputs.LINK }}
+          TAG: targz-to-zip-${{ github.run_number }}
+          RUN_NUMBER: ${{ github.run_number }}
       run: |
-          gh release create "targz-to-zip-${{ github.run_number }}" repacked.zip \
-            --title "Tar.gz to Zip 成功: 第 ${{ github.run_number }} 次运行" \
-            --notes-file - << 'EOF'
-          **源文件:** ${{ github.event.inputs.LINK }}
-          EOF
+        set -euo pipefail
+        printf '**源文件:** %s\n' "$LINK" > "$GITHUB_WORKSPACE/release-notes.md"
+
+        # 重跑同一个 run 时 Release 已存在，gh 会直接报错退出；先删掉旧的再建。
+        if gh release view "$TAG" > /dev/null 2>&1; then
+          echo "Release $TAG 已存在（重跑场景），先删除再重新创建。"
+          gh release delete "$TAG" --cleanup-tag --yes
+        fi
+
+        gh release create "$TAG" repacked.zip \
+          --title "Tar.gz to Zip 成功: 第 $RUN_NUMBER 次运行" \
+          --notes-file "$GITHUB_WORKSPACE/release-notes.md"
