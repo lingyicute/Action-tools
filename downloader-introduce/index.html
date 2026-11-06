@@ -344,6 +344,17 @@ footer a{color:var(--primary);font-weight:500}
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s var(--ease-std),transform .6s var(--ease-emph)}
 .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+
+/* ============ 兼容：Chrome < 111 不支持 oklch() / color-mix()，回退到默认色相(265)的静态色值 ============ */
+@supports not (color:oklch(0% 0 0)){
+:root{--primary:#2e51aa;--on-primary:#fafcff;--primary-container:#cfdeff;--on-primary-container:#051752;--secondary:#4d5d80;--on-secondary:#ffffff;--secondary-container:#d4e2fd;--on-secondary-container:#18233c;--tertiary:#79437c;--tertiary-container:#f7cff8;--on-tertiary-container:#360d39;--error:#b71c0e;--error-container:#ffdbd5;--on-error-container:#530200;--surface:#f8faff;--surface-dim:#d9dee8;--surface-bright:#fafcff;--surface-container-lowest:#ffffff;--surface-container-low:#f2f5fc;--surface-container:#eaeff7;--surface-container-high:#e3e8f2;--surface-container-highest:#dbe1ee;--on-surface:#141822;--on-surface-variant:#454d5e;--outline:#727a8d;--outline-variant:#c4cbd8;--inverse-surface:#1f242e;--inverse-on-surface:#ebeef5;--inverse-primary:#a8c4ff}
+:root[data-theme="dark"]{--primary:#adc7ff;--on-primary:#0b1f5b;--primary-container:#1f3c86;--on-primary-container:#d8e5ff;--secondary:#b4c4e5;--on-secondary:#1d2842;--secondary-container:#303d58;--on-secondary-container:#d8e2f6;--tertiary:#e2b6e4;--tertiary-container:#5c2d5f;--on-tertiary-container:#f6daf7;--error:#fda293;--error-container:#72130b;--on-error-container:#fedbd5;--surface:#0a0d14;--surface-dim:#0a0d14;--surface-bright:#292e38;--surface-container-lowest:#04060a;--surface-container-low:#10141b;--surface-container:#161b23;--surface-container-high:#1d222b;--surface-container-highest:#262b37;--on-surface:#e4e8ef;--on-surface-variant:#b6bece;--outline:#778093;--outline-variant:#353d4d;--inverse-surface:#e4e8ef;--inverse-on-surface:#1f242e;--inverse-primary:#2e51aa}
+.route .node{background:rgba(127,127,127,.12)}
+.speed .track{background:rgba(127,127,127,.16)}
+.appbar{background:rgba(248,250,255,0.8)}.appbar.scrolled{background:rgba(234,239,247,0.88)}.codeblock .head{border-bottom-color:rgba(235,238,245,0.15)}.copy{background:rgba(235,238,245,0.1)}.cta-card .btn.outlined{border-color:rgba(250,252,255,0.5)}
+:root[data-theme="dark"] .appbar{background:rgba(10,13,20,0.8)}:root[data-theme="dark"] .appbar.scrolled{background:rgba(22,27,35,0.88)}:root[data-theme="dark"] .codeblock .head{border-bottom-color:rgba(31,36,46,0.15)}:root[data-theme="dark"] .copy{background:rgba(31,36,46,0.1)}:root[data-theme="dark"] .cta-card .btn.outlined{border-color:rgba(11,31,91,0.5)}
+.palette{display:none}
+}
 </style>
 <style>
 @font-face {
