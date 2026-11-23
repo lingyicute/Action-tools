@@ -1,0 +1,188 @@
+name: APKM to APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      apkm_url:
+        description: "APKM 直链 (direct download URL of the .apkm file)"
+        required: true
+        type: string
+      output_name:
+        description: "输出文件名前缀 (output name prefix, 留空则为 app)"
+        required: false
+        default: "app"
+        type: string
+      sign_apk:
+        description: "合并后进行 zipalign + 签名 (否则产物为未签名 APK，无法直接安装)"
+        required: false
+        default: true
+        type: boolean
+      extract_native_libs:
+        description: "extractNativeLibs 模式 (manifest / none / true / false)"
+        required: false
+        default: "manifest"
+        type: choice
+        options:
+          - manifest
+          - none
+          - "true"
+          - "false"
+      apkeditor_version:
+        description: "APKEditor 版本 tag，如 V1.4.3 (留空则使用最新版)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apkm-to-apk-${{ github.run_number }}
+  cancel-in-progress: false
+
+jobs:
+  repack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APKM_URL: ${{ inputs.apkm_url }}
+      OUTPUT_NAME: ${{ inputs.output_name }}
+      SIGN_APK: ${{ inputs.sign_apk }}
+      EXTRACT_NATIVE_LIBS: ${{ inputs.extract_native_libs }}
+      APKEDITOR_VERSION: ${{ inputs.apkeditor_version }}
+      GH_TOKEN: ${{ github.token }}
+      RUN_NUMBER: ${{ github.run_number }}
+    steps:
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Download APKEditor
+        run: |
+          set -euo pipefail
+          mkdir -p work && cd work
+          if [ -n "${APKEDITOR_VERSION}" ]; then
+            gh release download "${APKEDITOR_VERSION}" --repo REAndroid/APKEditor --pattern 'APKEditor-*.jar' --output APKEditor.jar
+          else
+            gh release download --repo REAndroid/APKEditor --pattern 'APKEditor-*.jar' --output APKEditor.jar
+          fi
+          java -jar APKEditor.jar -v | tee apkeditor-version.txt
+
+      - name: Download APKM
+        run: |
+          set -euo pipefail
+          cd work
+          curl -L --fail --retry 3 --retry-delay 5 --connect-timeout 30 \
+            -A "Mozilla/5.0 (X11; Linux x86_64)" \
+            -o input.apkm "${APKM_URL}"
+          ls -lh input.apkm
+          # 校验确实是 zip 文件 (apkm 本质是 zip)
+          unzip -l input.apkm | head -n 30
+
+      - name: Merge splits into a single APK
+        run: |
+          set -euo pipefail
+          cd work
+          java -Xmx4g -jar APKEditor.jar m \
+            -i input.apkm \
+            -o merged.apk \
+            -extractNativeLibs "${EXTRACT_NATIVE_LIBS}" \
+            -clean-meta \
+            -f
+          ls -lh merged.apk
+
+      - name: Align and sign APK
+        if: ${{ inputs.sign_apk }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          cd work
+
+          BT_DIR="$(ls -d "${ANDROID_HOME}"/build-tools/* | sort -V | tail -n 1)"
+          echo "Using build-tools: ${BT_DIR}"
+
+          # 有仓库 secrets 则使用自己的密钥，否则临时生成一个 debug 密钥
+          if [ -n "${KEYSTORE_BASE64:-}" ] && [ -n "${KEYSTORE_PASSWORD:-}" ] && [ -n "${KEY_ALIAS:-}" ]; then
+            echo "Using keystore from repository secrets"
+            echo "${KEYSTORE_BASE64}" | base64 -d > release.keystore
+            KS_PASS="${KEYSTORE_PASSWORD}"
+            KS_ALIAS="${KEY_ALIAS}"
+            K_PASS="${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
+          else
+            echo "No keystore secrets found, generating a throwaway debug keystore"
+            KS_PASS="android"
+            KS_ALIAS="debug"
+            K_PASS="android"
+            keytool -genkeypair -v -keystore release.keystore \
+              -storepass "${KS_PASS}" -keypass "${K_PASS}" \
+              -alias "${KS_ALIAS}" -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+          "${BT_DIR}/zipalign" -p -f 4 merged.apk aligned.apk
+          "${BT_DIR}/apksigner" sign \
+            --ks release.keystore \
+            --ks-pass "pass:${KS_PASS}" \
+            --ks-key-alias "${KS_ALIAS}" \
+            --key-pass "pass:${K_PASS}" \
+            --out signed.apk \
+            aligned.apk
+          "${BT_DIR}/apksigner" verify --verbose signed.apk
+          mv signed.apk final.apk
+          rm -f release.keystore aligned.apk
+
+      - name: Use unsigned APK as final
+        if: ${{ !inputs.sign_apk }}
+        run: mv work/merged.apk work/final.apk
+
+      - name: Prepare release files
+        id: prep
+        run: |
+          set -euo pipefail
+          cd work
+          SAFE_NAME="$(printf '%s' "${OUTPUT_NAME:-app}" | tr -c 'A-Za-z0-9._-' '_' | sed 's/^_*//; s/_*$//')"
+          [ -n "${SAFE_NAME}" ] || SAFE_NAME="app"
+          FILE="${SAFE_NAME}-run${RUN_NUMBER}.apk"
+          mv final.apk "${FILE}"
+          SHA256="$(sha256sum "${FILE}" | cut -d' ' -f1)"
+          SIZE="$(du -h "${FILE}" | cut -f1)"
+          APKEDITOR_INFO="$(head -n 1 apkeditor-version.txt || true)"
+
+          {
+            echo "Repacked from APKM by [APKEditor](https://github.com/REAndroid/APKEditor)."
+            echo
+            echo "- Source: \`${APKM_URL%%\?*}\`"
+            echo "- File: \`${FILE}\` (${SIZE})"
+            echo "- SHA-256: \`${SHA256}\`"
+            echo "- Signed: \`${SIGN_APK}\`"
+            echo "- extractNativeLibs: \`${EXTRACT_NATIVE_LIBS}\`"
+            echo "- Tool: \`${APKEDITOR_INFO}\`"
+            echo "- Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          } > release-notes.md
+
+          echo "file=work/${FILE}" >> "$GITHUB_OUTPUT"
+          echo "name=${FILE}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.prep.outputs.name }}
+          path: ${{ steps.prep.outputs.file }}
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        run: |
+          set -euo pipefail
+          TAG="run-${RUN_NUMBER}"
+          gh release create "${TAG}" "${{ steps.prep.outputs.file }}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "Run #${RUN_NUMBER} - ${{ steps.prep.outputs.name }}" \
+            --notes-file work/release-notes.md
+          echo "Released: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> "$GITHUB_STEP_SUMMARY"
