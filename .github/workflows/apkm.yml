@@ -149,7 +149,9 @@ jobs:
         run: |
           set -euo pipefail
           cd work
-          SAFE_NAME="$(printf '%s' "${OUTPUT_NAME:-app}" | tr -c 'A-Za-z0-9._-' '_' | sed 's/^_*//; s/_*$//')"
+          # 开头的 - 会让 mv/sha256sum 把文件名当成选项；开头的 . 会变成隐藏文件，
+          # upload-artifact 默认不收，所以这两类字符一并从开头剥掉。
+          SAFE_NAME="$(printf '%s' "${OUTPUT_NAME:-app}" | tr -c 'A-Za-z0-9._-' '_' | sed 's/^[_.-]*//; s/_*$//')"
           [ -n "${SAFE_NAME}" ] || SAFE_NAME="app"
           FILE="${SAFE_NAME}-run${RUN_NUMBER}.apk"
           mv final.apk "${FILE}"
