@@ -47,6 +47,9 @@ jobs:
         # 1. 删除原始压缩包（否则会被一起打进 repacked.zip，体积直接翻倍）
         rm -f "$WORK_DIR/a.tar.gz"
 
+        # 归档里没有属主读权限的文件/目录（如 000）会让 find/zip 读不进去，先恢复。
+        chmod -R u+rwX "$WORK_DIR"
+
         # 2. 查找并删除所有符号链接 (symlinks)
         find "$WORK_DIR/" -type l -print -delete | sed 's/^/移除软链接: /'
 
