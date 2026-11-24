@@ -69,11 +69,14 @@ jobs:
         moved=0
         renamed=0
         while IFS= read -r -d '' f; do
-          name=${f##*/}          #  basename
+          orig=${f##*/}          #  basename
           rel=${f#./}            # 相对 a/ 的路径，只用于打日志
+          # `gh release create FILE#LABEL` 会把 # 之后的内容当作资产标签，名字里带 #
+          # 的文件会被截成一个不存在的路径而让发布失败，所以统一把 # 换成 _。
+          name=${orig//#/_}
           case $rel in
             */*) ;;              # 子目录里的文件需要搬运
-            *)   continue ;;     # 顶层文件原地不动
+            *)   [ "$name" != "$orig" ] || continue ;;  # 顶层文件原地不动（除非要改名）
           esac
 
           # 重名时自动改名：foo.txt -> foo.1.txt -> foo.2.txt，绝不覆盖。
@@ -93,9 +96,9 @@ jobs:
             dest="${stem}.${i}${ext}"
             i=$((i + 1))
           done
-          if [ "$dest" != "$name" ]; then
+          if [ "$dest" != "$orig" ]; then
             renamed=$((renamed + 1))
-            echo "重名冲突：$rel 已另存为 $dest"
+            echo "重名冲突或名字含 #：$rel 已另存为 $dest"
           fi
 
           mv -- "$f" "$dest"
@@ -113,7 +116,7 @@ jobs:
         # 只删顶层目录：嵌套目录随之消失。遍历全部层级时 -exec ... + 在条目很多时会
         # 分批执行，先删了父目录，find 再往里走就会报 No such file 而整步失败。
         find . -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
-        echo "扁平化完成：搬运 $moved 个文件（其中 $renamed 个因重名改名）。"
+        echo "扁平化完成：搬运 $moved 个文件（其中 $renamed 个因重名或含 # 改名）。"
 
     - name: Tree after process
       run: tree -ash "$GITHUB_WORKSPACE/$WORK_DIR"
