@@ -68,7 +68,13 @@ jobs:
           else
             gh release download --repo REAndroid/APKEditor --pattern 'APKEditor-*.jar' --output APKEditor.jar
           fi
-          java -jar APKEditor.jar -v | tee apkeditor-version.txt
+          # APKEditor 的 -v/-h 属于“非执行类命令”，约定退出码为 2
+          java -jar APKEditor.jar -v > apkeditor-version.txt 2>&1 || true
+          cat apkeditor-version.txt
+          if ! grep -q "APKEditor version" apkeditor-version.txt; then
+            echo "::error::APKEditor.jar 无法运行或下载不完整 (no version banner printed)"
+            exit 1
+          fi
 
       - name: Download APKM
         run: |
