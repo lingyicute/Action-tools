@@ -797,6 +797,9 @@ footer a{color:var(--primary);font-weight:500}
     ink.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - r.left - size/2}px;top:${e.clientY - r.top - size/2}px`;
     el.appendChild(ink);
     ink.addEventListener('animationend', () => ink.remove());
+    // With prefers-reduced-motion the CSS disables animations, so animationend
+    // never fires and every click would leave an orphan span behind.
+    setTimeout(() => ink.remove(), 700);
   });
 
   /* ---------- Reveal & 速度条 ---------- */
