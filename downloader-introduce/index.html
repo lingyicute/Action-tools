@@ -356,6 +356,17 @@ footer a{color:var(--primary);font-weight:500}
 .palette{display:none}
 }
 </style>
+<script>
+/* Apply the saved/system theme before first paint: doing it only from the script
+   at the end of <body> flashes the light theme (and fades into dark over .4s). */
+(function(){
+  var r = document.documentElement, t = null, h = null;
+  try { t = localStorage.getItem('ad-theme'); h = localStorage.getItem('ad-hue'); } catch (e) {}
+  if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  r.setAttribute('data-theme', t);
+  if (h && /^\d+(\.\d+)?$/.test(h.trim())) r.style.setProperty('--hue', h.trim());
+})();
+</script>
 <noscript><style>.reveal{opacity:1;transform:none}</style></noscript>
 <style>
 @font-face {
