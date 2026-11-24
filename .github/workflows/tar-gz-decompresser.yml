@@ -110,7 +110,9 @@ jobs:
           printf '%s\n' "$leftover"
           exit 1
         fi
-        find . -mindepth 1 -type d -exec rm -rf {} +
+        # 只删顶层目录：嵌套目录随之消失。遍历全部层级时 -exec ... + 在条目很多时会
+        # 分批执行，先删了父目录，find 再往里走就会报 No such file 而整步失败。
+        find . -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
         echo "扁平化完成：搬运 $moved 个文件（其中 $renamed 个因重名改名）。"
 
     - name: Tree after process
