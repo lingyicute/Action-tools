@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import base64
 import io
+import os
 import re
 import sys
 from pathlib import Path
@@ -33,7 +34,14 @@ def main() -> int:
         default="/tmp/Nebulove.ttf",
         help="local copy of the full source font (downloaded when missing)",
     )
-    parser.add_argument("--extra-chars", default="")
+    # 与 subset_font.py 保持一致：用 SUBSET_FONT_URL / --font-url 子集化的字体，
+    # 也必须拿同一份源字体来比对，否则会拿默认字体的字符表做出错误判断。
+    parser.add_argument(
+        "--font-url",
+        default=os.environ.get("SUBSET_FONT_URL", FONT_URL),
+        help="source font the page was subset from (default: $SUBSET_FONT_URL or Nebulove)",
+    )
+    parser.add_argument("--extra-chars", default=os.environ.get("SUBSET_EXTRA_CHARS", ""))
     args = parser.parse_args()
 
     html_path = Path(args.html)
@@ -58,7 +66,7 @@ def main() -> int:
     source_path = Path(args.source_font)
     try:
         if not source_path.exists():
-            source_path.write_bytes(download_font(FONT_URL))
+            source_path.write_bytes(download_font(args.font_url))
         source_cmap = set(TTFont(source_path).getBestCmap())
     except Exception as exc:  # offline / rate-limited: degrade to a weaker check
         print(f"Warning: source font unavailable ({exc}); checking subset only.", file=sys.stderr)
