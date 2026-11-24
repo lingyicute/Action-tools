@@ -30,13 +30,15 @@ jobs:
       # LINK 通过环境变量传入，避免链接中的引号被拼进 shell 代码
       env:
         LINK: ${{ github.event.inputs.LINK }}
-      run: wget -O "$WORK_DIR/a.tar.gz" -- "$LINK"
+      # 压缩包放在 RUNNER_TEMP 而不是 $WORK_DIR：归档里若有顶层的 a.tar.gz，
+      # 解压后会覆盖同名文件，随后清理步骤会把它当成压缩包一并删掉。
+      run: wget -O "$RUNNER_TEMP/a.tar.gz" -- "$LINK"
 
-    - name: Tree after wget
-      run: tree -ash "$GITHUB_WORKSPACE/$WORK_DIR"
+    - name: Show downloaded archive
+      run: ls -lh "$RUNNER_TEMP/a.tar.gz"
 
     - name: Unzip
-      run: tar -zxvf "$WORK_DIR/a.tar.gz" -C "$WORK_DIR"
+      run: tar -zxvf "$RUNNER_TEMP/a.tar.gz" -C "$WORK_DIR"
 
     - name: Tree after unzip
       run: tree -ash "$GITHUB_WORKSPACE/$WORK_DIR"
@@ -45,7 +47,6 @@ jobs:
       run: |
         set -euo pipefail
         cd "$WORK_DIR"
-        rm -f a.tar.gz
 
         # 归档里的目录/文件可能没有属主权限位（如 0555、000）：不先恢复，
         # find 进不去、mv 搬不出、rm 删不掉、gh 也读不了。-R 不会跟随软链接。
