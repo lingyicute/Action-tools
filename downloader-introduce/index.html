@@ -740,16 +740,26 @@ footer a{color:var(--primary);font-weight:500}
   const $$ = (s, r=document) => [...r.querySelectorAll(s)];
   const root = document.documentElement;
 
+  /* ---------- storage ---------- */
+  // Touching localStorage throws SecurityError when storage is blocked (browser
+  // privacy settings, sandboxed iframes). Left unguarded, that aborts this whole
+  // script before the reveal observer runs and every .reveal section stays
+  // invisible. Treat storage as best-effort.
+  const store = {
+    get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v){ try { localStorage.setItem(k, v); } catch { /* not persisted */ } }
+  };
+
   /* ---------- 主题：深浅色 ---------- */
   const themeIcon = $('#themeIcon use');
   function applyTheme(t){
     root.setAttribute('data-theme', t);
     themeIcon.setAttribute('href', t === 'dark' ? '#i-light' : '#i-dark');
-    localStorage.setItem('ad-theme', t);
+    store.set('ad-theme', t);
   }
   // Only accept values this page itself wrote: localStorage is shared per-origin,
   // and a foreign "ad-theme" would set a data-theme matching neither rule.
-  const savedTheme = localStorage.getItem('ad-theme');
+  const savedTheme = store.get('ad-theme');
   applyTheme(savedTheme === 'dark' || savedTheme === 'light'
     ? savedTheme
     : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
@@ -760,11 +770,11 @@ footer a{color:var(--primary);font-weight:500}
   function applyHue(h){
     root.style.setProperty('--hue', h);
     $$('.sw').forEach(b => b.classList.toggle('on', b.dataset.hue == h));
-    localStorage.setItem('ad-hue', h);
+    store.set('ad-hue', h);
   }
   // Same for the hue: it is fed straight into oklch(), so a foreign value would
   // poison --hue. Only digits are accepted here.
-  const savedHue = localStorage.getItem('ad-hue');
+  const savedHue = store.get('ad-hue');
   if (savedHue && /^\d+(\.\d+)?$/.test(savedHue.trim())) applyHue(savedHue.trim());
   $('#paletteBtn').addEventListener('click', e => { e.stopPropagation(); swatches.classList.toggle('open'); });
   swatches.addEventListener('click', e => { const b = e.target.closest('.sw'); if (b) applyHue(b.dataset.hue); });
