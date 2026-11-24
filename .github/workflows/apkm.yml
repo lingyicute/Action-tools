@@ -79,7 +79,10 @@ jobs:
             -o input.apkm "${APKM_URL}"
           ls -lh input.apkm
           # 校验确实是 zip 文件 (apkm 本质是 zip)
-          unzip -l input.apkm | head -n 30
+          # 不要写成 `unzip -l ... | head`：条目多（语言分包多）时 head 先退出，
+          # unzip 收到 SIGPIPE，在 pipefail 下整步被误判为失败。
+          unzip -l input.apkm > apkm-listing.txt
+          head -n 30 apkm-listing.txt
 
       - name: Merge splits into a single APK
         run: |
