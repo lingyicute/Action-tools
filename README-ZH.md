@@ -5,9 +5,10 @@
 ![Payload Dump](https://github.com/lingyicute/Action-tools/actions/workflows/payload-dumper.yml/badge.svg)
 ![Tar.gz decompresser](https://github.com/lingyicute/Action-tools/actions/workflows/tar-gz-decompresser.yml/badge.svg)
 ![Tar.gz to Zip](https://github.com/lingyicute/Action-tools/actions/workflows/tar-gz-to-zip.yml/badge.svg)
+![APKM to APK](https://github.com/lingyicute/Action-tools/actions/workflows/apkm.yml/badge.svg)
 ![System Test](https://github.com/lingyicute/Action-tools/actions/workflows/test-system.yml/badge.svg)
 
-一个基于 GitHub Actions 的小工具集合 —— 从链接下载文件、解包 Android OTA 的 `payload.bin`、解压或转换 `.tar.gz` 压缩包、查看 Runner 环境信息。全部在浏览器里完成，本地无需安装任何东西。
+一个基于 GitHub Actions 的小工具集合 —— 从链接下载文件、解包 Android OTA 的 `payload.bin`、解压或转换 `.tar.gz` 压缩包、把 `.apkm` 合并成单个 APK、查看 Runner 环境信息。全部在浏览器里完成，本地无需安装任何东西。
 
 **[中文]** · [English](./README.md)
 
@@ -26,6 +27,7 @@
 | 📦 [Payload Dumper 解包](#-payload-dumper-解包) | 从 Android OTA `payload.bin` 中提取指定分区（支持 URL / zip） | `LINK`、`PART` | Artifact `imgs` |
 | 🗜️ [Tar.gz Decompresser 解压](#️-targz-decompresser-解压) | 下载并解压 `.tar.gz`，把所有文件平铺到同一目录 | `LINK` | Release |
 | 🔄 [Tar.gz to Zip 转换](#-targz-to-zip-转换) | 将 `.tar.gz` 压缩包转换为 `.zip`（移除符号链接） | `LINK` | Release `repacked.zip` |
+| 📱 [APKM to APK 合并](#-apkm-to-apk-合并) | 把 `.apkm` 分包合并成单个 APK（可选 zipalign + 签名） | `apkm_url` 及选项 | Release `run-<run_number>` + Artifact |
 | 💻 [System Test 系统测试](#-system-test-系统测试) | 打印 Actions Runner 的硬件 / 系统信息 | — | 运行日志 |
 
 ## 快速上手
@@ -93,6 +95,21 @@
 | --- | --- | --- |
 | `LINK` | `.tar.gz` 文件的直链地址 | ✅ |
 
+### 📱 APKM to APK 合并
+
+下载 `.apkm` 包（base + 多个 split APK），用 [REAndroid/APKEditor](https://github.com/REAndroid/APKEditor) 合并成一个独立 APK，可选 zipalign 与签名，然后发布到名为 `run-<run_number>` 的 Release，并上传一份 Artifact。
+
+| 输入 | 说明 | 必填 |
+| --- | --- | --- |
+| `apkm_url` | `.apkm` 文件的直链地址 | ✅ |
+| `output_name` | 输出文件名前缀（默认 `app`） | |
+| `sign_apk` | 合并后 zipalign + 签名（默认开启）。未签名的 APK 无法安装 | |
+| `extract_native_libs` | `extractNativeLibs` 模式：`manifest`（默认）/ `none` / `true` / `false` | |
+| `apkeditor_version` | APKEditor 的 release tag，如 `V1.4.3`（留空为最新版） | |
+
+> [!NOTE]
+> 配置了仓库 Secrets `KEYSTORE_BASE64`、`KEYSTORE_PASSWORD`、`KEY_ALIAS`（可选 `KEY_PASSWORD`）时使用你自己的密钥签名；否则每次运行临时生成一个调试密钥，产物无法覆盖安装官方应用。
+
 ### 💻 System Test 系统测试
 
 打印 GitHub Actions Runner 的系统信息：`lscpu`、`whoami`、`id`、`uname -a`、`free -h`、`df -h`、`tree /home` 以及 `neofetch`。用来查看 Runner 当前的硬件配置很方便。无需任何输入。
@@ -107,6 +124,7 @@
 ## 致谢
 
 - [5ec1cff/payload-dumper](https://github.com/5ec1cff/payload-dumper)
+- [REAndroid/APKEditor](https://github.com/REAndroid/APKEditor)
 
 ## 许可证
 

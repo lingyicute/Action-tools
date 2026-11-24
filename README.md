@@ -5,9 +5,10 @@
 ![Payload Dump](https://github.com/lingyicute/Action-tools/actions/workflows/payload-dumper.yml/badge.svg)
 ![Tar.gz decompresser](https://github.com/lingyicute/Action-tools/actions/workflows/tar-gz-decompresser.yml/badge.svg)
 ![Tar.gz to Zip](https://github.com/lingyicute/Action-tools/actions/workflows/tar-gz-to-zip.yml/badge.svg)
+![APKM to APK](https://github.com/lingyicute/Action-tools/actions/workflows/apkm.yml/badge.svg)
 ![System Test](https://github.com/lingyicute/Action-tools/actions/workflows/test-system.yml/badge.svg)
 
-A collection of handy tools powered by GitHub Actions — download files from a link, dump partitions from Android OTA `payload.bin`, extract or convert `.tar.gz` archives, and inspect the runner environment. Everything runs in your browser; nothing to install locally.
+A collection of handy tools powered by GitHub Actions — download files from a link, dump partitions from Android OTA `payload.bin`, extract or convert `.tar.gz` archives, merge `.apkm` bundles into a single APK, and inspect the runner environment. Everything runs in your browser; nothing to install locally.
 
 **[中文](./README-ZH.md)** · [English]
 
@@ -26,6 +27,7 @@ A collection of handy tools powered by GitHub Actions — download files from a 
 | 📦 [Payload Dumper](#-payload-dumper) | Extracts selected partitions from an Android OTA `payload.bin` (URL / zip supported) | `LINK`, `PART` | Artifact `imgs` |
 | 🗜️ [Tar.gz Decompresser](#️-targz-decompresser) | Downloads and extracts a `.tar.gz`, flattening all files into one directory | `LINK` | Release |
 | 🔄 [Tar.gz to Zip](#-targz-to-zip) | Converts a `.tar.gz` archive into a `.zip` (symlinks removed) | `LINK` | Release `repacked.zip` |
+| 📱 [APKM to APK](#-apkm-to-apk) | Merges an `.apkm` split-APK bundle into a single APK (optionally zipalign + sign) | `apkm_url` + options | Release `run-<run_number>` + Artifact |
 | 💻 [System Test](#-system-test) | Prints hardware / OS info of the Actions runner | — | Run logs |
 
 ## Getting started
@@ -93,6 +95,21 @@ Handy when the destination only accepts `.zip`, or when symlinks inside the arch
 | --- | --- | --- |
 | `LINK` | Direct URL of the `.tar.gz` file | ✅ |
 
+### 📱 APKM to APK
+
+Downloads an `.apkm` bundle (base + split APKs), merges it into one standalone APK with [REAndroid/APKEditor](https://github.com/REAndroid/APKEditor), optionally zipaligns and signs it, then publishes it to a Release named `run-<run_number>` and uploads it as an Artifact.
+
+| Input | Description | Required |
+| --- | --- | --- |
+| `apkm_url` | Direct URL of the `.apkm` file | ✅ |
+| `output_name` | Output file name prefix (default `app`) | |
+| `sign_apk` | zipalign + sign the merged APK (default on). An unsigned APK cannot be installed | |
+| `extract_native_libs` | `extractNativeLibs` mode: `manifest` (default) / `none` / `true` / `false` | |
+| `apkeditor_version` | APKEditor release tag such as `V1.4.3` (empty = latest) | |
+
+> [!NOTE]
+> Signing uses your own key when the repository secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD` and `KEY_ALIAS` (plus optional `KEY_PASSWORD`) are set. Otherwise a throwaway debug key is generated on every run, so the result cannot be installed as an update over the official app.
+
 ### 💻 System Test
 
 Prints system information about the GitHub Actions runner: `lscpu`, `whoami`, `id`, `uname -a`, `free -h`, `df -h`, `tree /home`, and `neofetch`. Useful for checking the runner's current hardware specs. No inputs needed.
@@ -107,6 +124,7 @@ Prints system information about the GitHub Actions runner: `lscpu`, `whoami`, `i
 ## Credits
 
 - [5ec1cff/payload-dumper](https://github.com/5ec1cff/payload-dumper)
+- [REAndroid/APKEditor](https://github.com/REAndroid/APKEditor)
 
 ## License
 
