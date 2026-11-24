@@ -43,7 +43,7 @@ jobs:
           echo "::error::PART 是空的，请至少填写一个分区名（例如 boot）"
           exit 1
         fi
-        payload_dumper --partitions "$PART_CLEAN" "$LINK"
+        payload_dumper --partitions "$PART_CLEAN" -- "$LINK"
 
     - name: Upload Artifact (universal)
       uses: actions/upload-artifact@v4
