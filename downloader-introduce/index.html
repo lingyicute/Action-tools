@@ -523,7 +523,7 @@ footer a{color:var(--primary);font-weight:500}
         <div class="num"><svg><use href="#i-cloud"/></svg></div>
         <h3>Runner 端 wget 下载</h3>
         <p class="body-md">在 ubuntu-latest 上安装 wget、tree、coreutils，把文件抓取到 <em>downloads/down</em>。GitHub 到海外源站的链路又快又稳。</p>
-        <code>wget -O downloads/down '$LINK'</code>
+        <code>wget -O downloads/down -- "$LINK"</code>
       </article>
       <article class="flow-card reveal">
         <div class="num"><svg><use href="#i-cut"/></svg></div>
@@ -649,7 +649,8 @@ footer a{color:var(--primary);font-weight:500}
         <span class="k">required</span>: true
 
 <span class="k">steps</span>:
-  - <span class="k">run</span>: wget -O downloads/down '${{ github.event.inputs.LINK }}'
+  - <span class="k">env</span>: { LINK: ${{ github.event.inputs.LINK }} }
+    <span class="k">run</span>: wget -O downloads/down -- "$LINK"
   - <span class="k">run</span>: |   <span class="c"># ≥ 2GiB 自动分卷</span>
       split -b 2046M -d down down.part
   - <span class="k">run</span>: gh release create "downloader-${{ github.run_number }}" *
