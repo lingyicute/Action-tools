@@ -178,6 +178,7 @@ jobs:
           name: ${{ steps.prep.outputs.name }}
           path: ${{ steps.prep.outputs.file }}
           if-no-files-found: error
+          overwrite: true
 
       - name: Publish GitHub Release
         run: |

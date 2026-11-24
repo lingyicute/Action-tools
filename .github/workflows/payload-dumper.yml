@@ -53,3 +53,4 @@ jobs:
         # 一个分区都没导出（分区名写错、payload 不含该分区）时，
         # 默认只会 warn，job 仍然显示成功；这里改成 error，避免「成功但其实没产物」。
         if-no-files-found: error
+        overwrite: true
