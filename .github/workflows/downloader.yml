@@ -31,7 +31,7 @@ jobs:
       # LINK 走环境变量而不是直接拼进 shell 代码，否则链接里的引号/分号会被当作命令执行。
       env:
         LINK: ${{ github.event.inputs.LINK }}
-      run: wget -O "$DOWNLOAD_DIR/down" "$LINK"
+      run: wget -O "$DOWNLOAD_DIR/down" -- "$LINK"
 
     - name: Check size and split if >= 2GiB
       run: |

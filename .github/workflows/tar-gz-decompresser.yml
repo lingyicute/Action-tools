@@ -30,7 +30,7 @@ jobs:
       # LINK 通过环境变量传入，避免链接中的引号被拼进 shell 代码
       env:
         LINK: ${{ github.event.inputs.LINK }}
-      run: wget -O "$WORK_DIR/a.tar.gz" "$LINK"
+      run: wget -O "$WORK_DIR/a.tar.gz" -- "$LINK"
 
     - name: Tree after wget
       run: tree -ash "$GITHUB_WORKSPACE/$WORK_DIR"

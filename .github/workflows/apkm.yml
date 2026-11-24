@@ -76,7 +76,7 @@ jobs:
           cd work
           curl -L --fail --retry 3 --retry-delay 5 --connect-timeout 30 \
             -A "Mozilla/5.0 (X11; Linux x86_64)" \
-            -o input.apkm "${APKM_URL}"
+            -o input.apkm --url "${APKM_URL}"
           ls -lh input.apkm
           # 校验确实是 zip 文件 (apkm 本质是 zip)
           # 不要写成 `unzip -l ... | head`：条目多（语言分包多）时 head 先退出，

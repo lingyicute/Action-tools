@@ -30,7 +30,7 @@ jobs:
       # LINK 通过环境变量传入：直接拼进 shell 代码时，链接里的单引号会截断字符串并执行任意命令
       env:
         LINK: ${{ github.event.inputs.LINK }}
-      run: wget -O "$WORK_DIR/a.tar.gz" "$LINK"
+      run: wget -O "$WORK_DIR/a.tar.gz" -- "$LINK"
 
     - name: Tree after download
       run: tree -ash "$GITHUB_WORKSPACE/$WORK_DIR"
